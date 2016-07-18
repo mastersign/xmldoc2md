@@ -11,6 +11,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleProgram", "ExamplePr
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{74315262-66D0-4FCB-AFE8-862790374B38}"
 	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
 		xmldoc2md\run.cmd = xmldoc2md\run.cmd
 		xmldoc2md\xmldoc2md.cmd = xmldoc2md\xmldoc2md.cmd
 		xmldoc2md\xmldoc2md.ps1 = xmldoc2md\xmldoc2md.ps1
