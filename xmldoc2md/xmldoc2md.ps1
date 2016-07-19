@@ -65,6 +65,11 @@ foreach ($p in $assemblyPaths)
 	}
 }
 
+function parse-cref($cref)
+{
+    return [Mastersign.XmlDoc.CRefParsing]::Parse($cref)
+}
+
 function public-types()
 {
 	foreach ($a in $assemblyRefs)
@@ -120,13 +125,14 @@ foreach ($t in $types)
     $writer = new System.IO.StreamWriter($out, (new System.Text.UTF8Encoding ($false)))
 
     $writer.WriteLine((transform $typeStyle $tm))
-    [array]$methods = property-member $tn
+    [array]$methods = method-member $tn
     if ($methods)
     {
         $writer.WriteLine("## Methods {#methods}")
         foreach ($m in $methods)
         {
-            $writer.WriteLine("### " + $m.name)
+            $parsedMethod = parse-cref $m.name
+            $writer.WriteLine("### " + $parsedMethod.Name)
             $writer.WriteLine((transform $memberStyle $m))
         }
     }

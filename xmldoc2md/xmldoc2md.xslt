@@ -50,10 +50,10 @@
     <param name="cref" />
     <variable name="member-type" select="cp:MemberType($cref)" />
     <choose>
-      <when test="$member-type = 'T'">
+      <when test="$member-type = 'Type'">
         <value-of select="cp:TypeName($cref)"/>
       </when>
-      <when test="$member-type = 'M'">
+      <when test="$member-type = 'Method'">
         <value-of select="cp:MethodName($cref)"/>
       </when>
     </choose>
