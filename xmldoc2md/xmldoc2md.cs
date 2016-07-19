@@ -7,6 +7,141 @@ using System.Text.RegularExpressions;
 namespace Mastersign.XmlDoc
 {
     // https://msdn.microsoft.com/en-us/library/fsbx0t7x.aspx
+
+    public enum CRefKind
+    {
+        Unknown,
+        Invalid,
+        Error,
+        Namespace,
+        Type,
+        Field,
+        Method,
+        Property,
+        Event,
+    }
+
+    public class CRefParsingResult
+    {
+        public CRefKind Kind { get; private set; }
+
+        public CRefParsingResult(CRefKind kind)
+        {
+            Kind = kind;
+        }
+    }
+
+    public class CRefErrorMessage : CRefParsingResult
+    {
+        public string Message { get; private set; }
+
+        public CRefErrorMessage(string message)
+            : base(CRefKind.Error)
+        {
+            Message = message;
+        }
+    }
+
+    public class CRefNamespace : CRefParsingResult
+    {
+        public string Namespace { get; private set; }
+
+        protected CRefNamespace(CRefKind kind, string ns)
+            : base(kind)
+        {
+            Namespace = ns;
+        }
+
+        public CRefNamespace(string ns)
+            : this(CRefKind.Namespace, ns)
+        {
+        }
+    }
+
+    public class CRefType : CRefNamespace
+    {
+        public string Type { get; private set; }
+
+        protected CRefType(CRefKind kind, string ns, string type)
+            : base(kind, ns)
+        {
+            Type = type;
+        }
+
+        public CRefType(string ns, string type)
+            : this(CRefKind.Type, ns, type)
+        {
+        }
+    }
+
+    public abstract class CRefMember : CRefType
+    {
+        public string Name { get; private set; }
+
+        protected CRefMember(CRefKind kind, string ns, string type, string name)
+            : base(kind, ns, type)
+        {
+            Name = name;
+        }
+    }
+
+    public class CRefField : CRefMember
+    {
+        public CRefField(string ns, string type, string name)
+            : base(CRefKind.Field, ns, type, name)
+        {
+        }
+    }
+
+    public class CRefArgumentType
+    {
+        public string Namespace { get; private set; }
+
+        public string Type { get; private set; }
+
+        public string Modifiers { get; private set; }
+
+        public CRefArgumentType(string ns, string type, string mod)
+        {
+            Namespace = ns;
+            Type = type;
+            Modifiers = mod;
+        }
+    }
+
+    public class CRefMethod : CRefMember
+    {
+        public CRefArgumentType[] Arguments { get; private set; }
+
+        public string ReturnType { get; private set; } // only in use with casting operators
+
+        public CRefMethod(string ns, string type, string name, CRefArgumentType[] arguments, string returnType)
+            : base(CRefKind.Method, ns, type, name)
+        {
+            Arguments = arguments;
+            ReturnType = returnType;
+        }
+    }
+
+    public class CRefProperty : CRefMember
+    {
+        public CRefArgumentType[] Arguments { get; private set; }
+
+        public CRefProperty(string ns, string type, string name, CRefArgumentType[] arguments)
+            : base(CRefKind.Property, ns, type, name)
+        {
+            Arguments = arguments;
+        }
+    }
+
+    public class CRefEvent : CRefMember
+    {
+        public CRefEvent(string ns, string type, string name)
+            : base(CRefKind.Event, ns, type, name)
+        {
+        }
+    }
+
     public class CRefParsing
     {
         private static readonly Regex CRefPattern
@@ -30,176 +165,130 @@ namespace Mastersign.XmlDoc
         private static readonly Regex EventPattern
             = new Regex(@"^(?:(?<ns>[^\.]+(?:\.[^\.]+)*?)\.)?(?<type>[^\.]+?)\.(?<name>[^\.\(]+)$");
 
-        public string MemberKind(string cref)
+        private static CRefKind ParseKind(string kind)
         {
-            if (cref == null) throw new ArgumentNullException(nameof(cref));
-            if (cref.StartsWith("!")) { return "error"; }
-            int p = cref.IndexOf(':');
-            if (p < 0) { return "invalid"; }
-            switch (cref.Substring(0, p))
+            switch (kind)
             {
-                case "N": return "namespace";
-                case "T": return "type";
-                case "F": return "field";
-                case "P": return "property";
-                case "M": return "method";
-                case "E": return "event";
-                default: return "unknown";
+                case "N": return CRefKind.Namespace;
+                case "T": return CRefKind.Type;
+                case "F": return CRefKind.Field;
+                case "P": return CRefKind.Property;
+                case "M": return CRefKind.Method;
+                case "E": return CRefKind.Event;
+                default: return CRefKind.Unknown;
+            }
+        }
+
+        private static string EmptyToNull(string value)
+        {
+            return string.IsNullOrEmpty(value) ? null : value;
+        }
+
+        private static CRefArgumentType[] ParseArgumentList(string args)
+        {
+            return null;
+        }
+
+        public static CRefParsingResult Parse(string cref)
+        {
+            if (cref == null) throw new ArgumentNullException("cref");
+            if (cref.StartsWith("!"))
+            {
+                var message = cref.Substring(1).TrimStart();
+                return new CRefErrorMessage(message);
+            }
+            var crefM = CRefPattern.Match(cref);
+            if (!crefM.Success)
+            {
+                return new CRefParsingResult(CRefKind.Invalid);
+            }
+            var kind = ParseKind(crefM.Groups["kind"].Value);
+            var def = crefM.Groups["def"].Value;
+            Match m = default(Match);
+            switch (kind)
+            {
+                case CRefKind.Namespace:
+                    m = NamespacePattern.Match(def);
+                    return new CRefNamespace(
+                        EmptyToNull(m.Groups["ns"].Value));
+                case CRefKind.Type:
+                    m = TypePattern.Match(def);
+                    return new CRefType(
+                        EmptyToNull(m.Groups["ns"].Value),
+                        m.Groups["type"].Value);
+                case CRefKind.Field:
+                    m = FieldPattern.Match(def);
+                    return new CRefField(
+                        EmptyToNull(m.Groups["ns"].Value),
+                        m.Groups["type"].Value,
+                        m.Groups["name"].Value);
+                case CRefKind.Method:
+                    m = MethodPattern.Match(def);
+                    return new CRefMethod(
+                        EmptyToNull(m.Groups["ns"].Value),
+                        m.Groups["type"].Value,
+                        m.Groups["name"].Value,
+                        ParseArgumentList(m.Groups["args"].Value),
+                        EmptyToNull(m.Groups["ret"].Value));
+                case CRefKind.Property:
+                    m = PropertyPattern.Match(def);
+                    return new CRefProperty(
+                        EmptyToNull(m.Groups["ns"].Value),
+                        m.Groups["type"].Value,
+                        m.Groups["name"].Value,
+                        ParseArgumentList(m.Groups["args"].Value));
+                case CRefKind.Event:
+                    m = EventPattern.Match(def);
+                    return new CRefEvent(
+                        EmptyToNull(m.Groups["ns"].Value),
+                        m.Groups["type"].Value,
+                        m.Groups["name"].Value);
+                case CRefKind.Invalid:
+                    return new CRefParsingResult(kind);
+                default:
+                    return new CRefParsingResult(CRefKind.Unknown);
             }
         }
 
         public string ErrorMessage(string cref)
         {
-            if (cref == null) throw new ArgumentNullException(nameof(cref));
-            if (MemberKind(cref) != "error") return null;
-            return cref.Substring(1).TrimStart();
+            var error = Parse(cref) as CRefErrorMessage;
+            return error != null ? error.Message : null;
         }
 
         public string Namespace(string cref)
         {
-            if (cref == null) throw new ArgumentNullException(nameof(cref));
-            var kind = MemberKind(cref);
-            if (kind == "unknown" ||
-                kind == "error")
-            {
-                return null;
-            }
-            var crefM = CRefPattern.Match(cref);
-            if (!crefM.Success)
-            {
-                throw new ArgumentException("The given cref has no valid syntax.", nameof(cref));
-            }
-            var def = crefM.Groups["def"].Value;
-            Match m = default(Match);
-            switch (kind)
-            {
-                case "namespace":
-                    m = NamespacePattern.Match(def);
-                    break;
-                case "type":
-                    m = TypePattern.Match(def);
-                    break;
-                case "method":
-                    m = MethodPattern.Match(def);
-                    break;
-                case "field":
-                    m = FieldPattern.Match(def);
-                    break;
-                case "property":
-                    m = PropertyPattern.Match(def);
-                    break;
-                case "event":
-                    m = EventPattern.Match(def);
-                    break;
-            }
-            Debug.Assert(m != null);
-            if (!m.Success)
-            {
-                throw new ArgumentException("The given cref has no namespace.", nameof(cref));
-            }
-            var ns = m.Groups["ns"].Value;
-            return ns != string.Empty ? ns : null;
+            var ns = Parse(cref) as CRefNamespace;
+            return ns != null ? ns.Namespace : null;
         }
 
         public string TypeName(string cref)
         {
-            if (cref == null) throw new ArgumentNullException(nameof(cref));
-            var kind = MemberKind(cref);
-            if (kind == "namespace" ||
-                kind == "unknown" ||
-                kind == "error")
-            {
-                return null;
-            }
-            var crefM = CRefPattern.Match(cref);
-            if (!crefM.Success)
-            {
-                throw new ArgumentException("The given cref has no valid syntax.", nameof(cref));
-            }
-            var def = crefM.Groups["def"].Value;
-            Match m = default(Match);
-            switch (kind)
-            {
-                case "type":
-                    m = TypePattern.Match(def);
-                    break;
-                case "method":
-                    m = MethodPattern.Match(def);
-                    break;
-                case "field":
-                    m = FieldPattern.Match(def);
-                    break;
-                case "property":
-                    m = PropertyPattern.Match(def);
-                    break;
-                case "event":
-                    m = EventPattern.Match(def);
-                    break;
-            }
-            Debug.Assert(m != null);
-            if (!m.Success)
-            {
-                throw new ArgumentException("The given cref has no type name.", nameof(cref));
-            }
-            return m.Groups["type"].Value;
+            var type = Parse(cref) as CRefType;
+            return type != null ? type.Type : null;
         }
 
         public string MemberName(string cref)
         {
-            if (cref == null) throw new ArgumentNullException(nameof(cref));
-            var kind = MemberKind(cref);
-            if (kind == "namespace" ||
-                kind == "type" ||
-                kind == "unknown" ||
-                kind == "error")
-            {
-                return null;
-            }
-            var crefM = CRefPattern.Match(cref);
-            if (!crefM.Success)
-            {
-                throw new ArgumentException("The given cref has no valid syntax.", nameof(cref));
-            }
-            var def = crefM.Groups["def"].Value;
-            Match m = default(Match);
-            switch (kind)
-            {
-                case "method":
-                    m = MethodPattern.Match(def);
-                    break;
-                case "field":
-                    m = FieldPattern.Match(def);
-                    break;
-                case "property":
-                    m = PropertyPattern.Match(def);
-                    break;
-                case "event":
-                    m = EventPattern.Match(def);
-                    break;
-            }
-            Debug.Assert(m != null);
-            if (!m.Success)
-            {
-                throw new ArgumentException("The given cref has no member name.", nameof(cref));
-            }
-            return m.Groups["name"].Value;
+            var member = Parse(cref) as CRefMember;
+            return member != null ? member.Name : null;
         }
     }
 
     public class CRefFormatting
     {
-        private static readonly CRefParsing parsing = new CRefParsing();
-
         public string FormatLabel(string cref)
         {
-            switch (parsing.MemberKind(cref))
+            var result = CRefParsing.Parse(cref);
+
+            switch (result.Kind)
             {
-                case "namespace": return parsing.Namespace(cref);
-                case "type": return parsing.TypeName(cref);
-                case "field": return parsing.MemberName(cref);
-                case "method": return parsing.MemberName(cref);
-                case "property": return parsing.MemberName(cref);
-                case "event": return parsing.MemberName(cref);
+                case CRefKind.Namespace: return ((CRefNamespace)result).Namespace;
+                case CRefKind.Type: return ((CRefType)result).Type;
+                case CRefKind.Field: return ((CRefMember)result).Name;
+                case CRefKind.Method: return ((CRefMember)result).Name;
+                case CRefKind.Property: return ((CRefMember)result).Name;
+                case CRefKind.Event: return ((CRefMember)result).Name;
                 default: return "UNKNOWN_KIND_OF_MEMBER";
             }
         }

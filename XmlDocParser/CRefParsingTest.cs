@@ -9,28 +9,21 @@ namespace Mastersign.XmlDoc
     [TestClass]
     public class CRefParsingTest : BaseTest
     {
-        private CRefParsing parsing;
-
-        [TestInitialize]
-        public void Initialize()
-        {
-            parsing = new CRefParsing();
-        }
+        private CRefParsing parsing = new CRefParsing();
 
         [TestMethod]
         public void MemberKindTest()
         {
-
-            Assert.Throws<ArgumentNullException>(() => { parsing.MemberKind(null); });
-            Assert.AreEqual("namespace", parsing.MemberKind("N:A.B"));
-            Assert.AreEqual("type", parsing.MemberKind("T:A.B.C"));
-            Assert.AreEqual("field", parsing.MemberKind("F:A.B.C.x"));
-            Assert.AreEqual("property", parsing.MemberKind("P:A.B.C.y"));
-            Assert.AreEqual("method", parsing.MemberKind("M:A.B.C.z()"));
-            Assert.AreEqual("event", parsing.MemberKind("E:A.B.C.e"));
-            Assert.AreEqual("unknown", parsing.MemberKind("U:Unknown"));
-            Assert.AreEqual("error", parsing.MemberKind("!Error Message"));
-            Assert.AreEqual("invalid", parsing.MemberKind("invalid syntax"));
+            Assert.Throws<ArgumentNullException>(() => { CRefParsing.Parse(null); });
+            Assert.AreEqual(CRefKind.Namespace, CRefParsing.Parse("N:A.B").Kind);
+            Assert.AreEqual(CRefKind.Type, CRefParsing.Parse("T:A.B.C").Kind);
+            Assert.AreEqual(CRefKind.Field, CRefParsing.Parse("F:A.B.C.x").Kind);
+            Assert.AreEqual(CRefKind.Property, CRefParsing.Parse("P:A.B.C.y").Kind);
+            Assert.AreEqual(CRefKind.Method, CRefParsing.Parse("M:A.B.C.z()").Kind);
+            Assert.AreEqual(CRefKind.Event, CRefParsing.Parse("E:A.B.C.e").Kind);
+            Assert.AreEqual(CRefKind.Unknown, CRefParsing.Parse("U:Unknown").Kind);
+            Assert.AreEqual(CRefKind.Error, CRefParsing.Parse("!Error Message").Kind);
+            Assert.AreEqual(CRefKind.Invalid, CRefParsing.Parse("invalid syntax").Kind);
         }
 
         [TestMethod]
@@ -47,12 +40,12 @@ namespace Mastersign.XmlDoc
         public void NamespaceExceptionTest()
         {
             Assert.Throws<ArgumentNullException>(() => { parsing.Namespace(null); });
-            Assert.Throws<ArgumentException>(() => { parsing.Namespace(""); });
         }
 
         [TestMethod]
         public void NamespaceNullTest()
         {
+            Assert.IsNull(parsing.Namespace(""));
             Assert.IsNull(parsing.Namespace("! error"));
             Assert.IsNull(parsing.Namespace("X:unknown"));
         }
@@ -129,12 +122,12 @@ namespace Mastersign.XmlDoc
         public void TypeNameExceptionTest()
         {
             Assert.Throws<ArgumentNullException>(() => { parsing.TypeName(null); });
-            Assert.Throws<ArgumentException>(() => { parsing.TypeName(""); });
         }
 
         [TestMethod]
         public void TypeNameNullTest()
         {
+            Assert.IsNull(parsing.TypeName(""));
             Assert.IsNull(parsing.TypeName("! error"));
             Assert.IsNull(parsing.TypeName("X:unknown"));
             Assert.IsNull(parsing.TypeName("N:A.B"));
