@@ -17,12 +17,26 @@ namespace Mastersign.XmlDoc
             Assert.AreEqual(CRefKind.Namespace, CRefParsing.Parse("N:A.B").Kind);
             Assert.AreEqual(CRefKind.Type, CRefParsing.Parse("T:A.B.C").Kind);
             Assert.AreEqual(CRefKind.Field, CRefParsing.Parse("F:A.B.C.x").Kind);
-            Assert.AreEqual(CRefKind.Property, CRefParsing.Parse("P:A.B.C.y").Kind);
             Assert.AreEqual(CRefKind.Method, CRefParsing.Parse("M:A.B.C.z()").Kind);
+            Assert.AreEqual(CRefKind.Property, CRefParsing.Parse("P:A.B.C.y").Kind);
             Assert.AreEqual(CRefKind.Event, CRefParsing.Parse("E:A.B.C.e").Kind);
             Assert.AreEqual(CRefKind.Unknown, CRefParsing.Parse("U:Unknown").Kind);
             Assert.AreEqual(CRefKind.Error, CRefParsing.Parse("!Error Message").Kind);
             Assert.AreEqual(CRefKind.Invalid, CRefParsing.Parse("invalid syntax").Kind);
+        }
+
+        [Test]
+        public void ResultTypeTest()
+        {
+            Assert.IsInstanceOf<CRefNamespace>(CRefParsing.Parse("N:A"));
+            Assert.IsInstanceOf<CRefType>(CRefParsing.Parse("T:A"));
+            Assert.IsInstanceOf<CRefField>(CRefParsing.Parse("F:A.x"));
+            Assert.IsInstanceOf<CRefMethod>(CRefParsing.Parse("M:A.x()"));
+            Assert.IsInstanceOf<CRefProperty>(CRefParsing.Parse("P:A.x"));
+            Assert.IsInstanceOf<CRefEvent>(CRefParsing.Parse("E:A.x"));
+            Assert.IsInstanceOf<CRefParsingResult>(CRefParsing.Parse("X:A"));
+            Assert.IsInstanceOf<CRefParsingResult>(CRefParsing.Parse("! Error Message"));
+            Assert.IsInstanceOf<CRefParsingResult>(CRefParsing.Parse("invalid syntax"));
         }
 
         [Test]
@@ -194,5 +208,55 @@ namespace Mastersign.XmlDoc
             Assert.AreEqual("C`1", parsing.TypeName("E:A.B`10.C`1.x"));
         }
 
+        [Test]
+        public void MemberNameNullTest()
+        {
+            Assert.IsNull(parsing.MemberName("N:A.B.C"));
+            Assert.IsNull(parsing.MemberName("T:A.B.C"));
+            Assert.IsNull(parsing.MemberName("X:A.B.C"));
+        }
+
+        [Test]
+        public void MemberNameFromFieldTest()
+        {
+            Assert.AreEqual("x", parsing.MemberName("F:A.x"));
+            Assert.AreEqual("xyz", parsing.MemberName("F:A.B.C.xyz"));
+            Assert.AreEqual("_xY", parsing.MemberName("F:A.B._xY"));
+            Assert.AreEqual("xyz", parsing.MemberName("F:A.B`10.C`2.xyz"));
+        }
+
+        [Test]
+        public void MemberNameFromMethodTest()
+        {
+            Assert.AreEqual("x", parsing.MemberName("M:A.x()"));
+            Assert.AreEqual("xyz", parsing.MemberName("M:A.B.C.xyz(Aa,Bb.Cc.Dd,Ee)"));
+            Assert.AreEqual("_xY``1", parsing.MemberName("M:A.B._xY``1(Aa*,Bb.Cc.Dd@,``0)~A.E"));
+        }
+
+        [Test]
+        public void MemberNameFromPropertyTest()
+        {
+            Assert.AreEqual("x", parsing.MemberName("P:A.x"));
+            Assert.AreEqual("xyz", parsing.MemberName("P:A.B.C.xyz"));
+            Assert.AreEqual("_xY", parsing.MemberName("P:A.B._xY(A.C)"));
+            Assert.AreEqual("xyz", parsing.MemberName("P:A.B`10.C`2.xyz(A.C*,A.D@)"));
+        }
+
+        [Test]
+        public void MemberNameFromEventTest()
+        {
+            Assert.AreEqual("x", parsing.MemberName("E:A.x"));
+            Assert.AreEqual("xyz", parsing.MemberName("E:A.B.C.xyz"));
+            Assert.AreEqual("_xY", parsing.MemberName("E:A.B._xY"));
+            Assert.AreEqual("xyz", parsing.MemberName("E:A.B`10.C`2.xyz"));
+        }
+
+        [Test]
+        public void ReturnTypeFromMethodTest()
+        {
+            Assert.IsNull(parsing.ReturnType("M:A.x"));
+            Assert.AreEqual("A.D", parsing.ReturnType("M:A.B.x(A.C)~A.D.E").Namespace);
+            Assert.AreEqual("E", parsing.ReturnType("M:A.B.x(A.C)~A.D.E").Type);
+        }
     }
 }

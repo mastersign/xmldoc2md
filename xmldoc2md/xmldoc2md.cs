@@ -113,9 +113,9 @@ namespace Mastersign.XmlDoc
     {
         public CRefArgumentType[] Arguments { get; private set; }
 
-        public string ReturnType { get; private set; } // only in use with casting operators
+        public CRefArgumentType ReturnType { get; private set; } // only in use with casting operators
 
-        public CRefMethod(string ns, string type, string name, CRefArgumentType[] arguments, string returnType)
+        public CRefMethod(string ns, string type, string name, CRefArgumentType[] arguments, CRefArgumentType returnType)
             : base(CRefKind.Method, ns, type, name)
         {
             Arguments = arguments;
@@ -165,6 +165,9 @@ namespace Mastersign.XmlDoc
         private static readonly Regex EventPattern
             = new Regex(@"^(?:(?<ns>[^\.]+(?:\.[^\.]+)*?)\.)?(?<type>[^\.]+?)\.(?<name>[^\.\(]+)$");
 
+        private static readonly Regex ArgumentTypePattern
+            = new Regex(@"^(?:(?<ns>[^\.]+(?:\.[^\.]+)*?)\.)?(?<type>[^\.]+?)(?<mod>(?:\*|@|\^|\[[\d,\:\?]*\])*)$");
+
         private static CRefKind ParseKind(string kind)
         {
             switch (kind)
@@ -184,9 +187,26 @@ namespace Mastersign.XmlDoc
             return string.IsNullOrEmpty(value) ? null : value;
         }
 
+        private static CRefArgumentType ParseArgumentType(string type)
+        {
+            if (type == null) return null;
+            var m = ArgumentTypePattern.Match(type);
+            if (!m.Success) return null;
+            return new CRefArgumentType(
+                EmptyToNull(m.Groups["ns"].Value),
+                m.Groups["type"].Value,
+                EmptyToNull(m.Groups["mod"].Value));
+        }
+
         private static CRefArgumentType[] ParseArgumentList(string args)
         {
-            return null;
+            var parts = args.Split(',');
+            var result = new List<CRefArgumentType>();
+            foreach (var part in parts)
+            {
+                result.Add(ParseArgumentType(part));
+            }
+            return result.ToArray();
         }
 
         public static CRefParsingResult Parse(string cref)
@@ -229,7 +249,7 @@ namespace Mastersign.XmlDoc
                         m.Groups["type"].Value,
                         m.Groups["name"].Value,
                         ParseArgumentList(m.Groups["args"].Value),
-                        EmptyToNull(m.Groups["ret"].Value));
+                        ParseArgumentType(m.Groups["ret"].Value));
                 case CRefKind.Property:
                     m = PropertyPattern.Match(def);
                     return new CRefProperty(
@@ -272,6 +292,21 @@ namespace Mastersign.XmlDoc
         {
             var member = Parse(cref) as CRefMember;
             return member != null ? member.Name : null;
+        }
+
+        public CRefArgumentType[] Arguments(string cref)
+        {
+            var result = Parse(cref);
+            var method = result as CRefMethod;
+            if (method != null) return method.Arguments;
+            var property = result as CRefProperty;
+            return property != null ? property.Arguments : null;
+        }
+
+        public CRefArgumentType ReturnType(string cref)
+        {
+            var method = Parse(cref) as CRefMethod;
+            return method != null ? method.ReturnType : null;
         }
     }
 
