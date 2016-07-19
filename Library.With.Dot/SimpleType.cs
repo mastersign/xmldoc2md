@@ -6,8 +6,15 @@ using System.Text;
 namespace Nested.Namespace
 {
     /// <summary>
+    /// <para>
     /// This is a simple public class ‒ a type with no special attributes.
+    /// </para>
+    /// <para>
+    /// This <strong>class description</strong> is used to test some markup.
+    /// </para>
     /// </summary>
+    /// <seealso cref="Library.With.Dot.OuterClass"/>
+    /// <seealso cref="Library.With.Dot.GenericOuterClass{T1, T2}"/>
     public class SimpleType
     {
         /// <summary>
