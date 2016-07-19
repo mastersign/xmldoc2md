@@ -151,22 +151,22 @@ namespace Mastersign.XmlDoc
             = new Regex(@"^(?<ns>[^\.]+(?:\.[^\.]+)*?)$");
 
         private static readonly Regex TypePattern
-            = new Regex(@"^(?:(?<ns>[^\.]+(?:\.[^\.]+)*?)\.)?(?<type>[^\.]+?)$");
+            = new Regex(@"^(?:(?<ns>[^\.]+(?:\.[^\.]+)*?)\.)?(?<type>[^\.\(]+?)$");
 
         private static readonly Regex MethodPattern
-            = new Regex(@"^(?:(?<ns>[^\.]+(?:\.[^\.]+)*?)\.)?(?<type>[^\.]+?)\.(?<name>[^\.\(]+)\((?<args>.*)\)(?:~(?<ret>.*))?$");
+            = new Regex(@"^(?:(?<ns>[^\.\(]+(?:\.[^\.]+)*?)\.)?(?<type>[^\.\(]+?)\.(?<name>[^\.\(]+)(?:\((?<args>.+?)\)(?:~(?<ret>.+))?)?$");
 
         private static readonly Regex FieldPattern
-            = new Regex(@"^(?:(?<ns>[^\.]+(?:\.[^\.]+)*?)\.)?(?<type>[^\.]+?)\.(?<name>[^\.\(]+)$");
+            = new Regex(@"^(?:(?<ns>[^\.]+(?:\.[^\.]+)*?)\.)?(?<type>[^\.\(]+?)\.(?<name>[^\.\(]+)$");
 
         private static readonly Regex PropertyPattern
-            = new Regex(@"^(?:(?<ns>[^\.]+(?:\.[^\.]+)*?)\.)?(?<type>[^\.]+?)\.(?<name>[^\.\(]+)(?:\((?<args>.*)\))?$");
+            = new Regex(@"^(?:(?<ns>[^\.\(]+(?:\.[^\.]+)*?)\.)?(?<type>[^\.\(]+?)\.(?<name>[^\.\(]+)(?:\((?<args>.+?)\))?$");
 
         private static readonly Regex EventPattern
-            = new Regex(@"^(?:(?<ns>[^\.]+(?:\.[^\.]+)*?)\.)?(?<type>[^\.]+?)\.(?<name>[^\.\(]+)$");
+            = new Regex(@"^(?:(?<ns>[^\.]+(?:\.[^\.]+)*?)\.)?(?<type>[^\.\(]+?)\.(?<name>[^\.\(]+)$");
 
         private static readonly Regex ArgumentTypePattern
-            = new Regex(@"^(?:(?<ns>[^\.]+(?:\.[^\.]+)*?)\.)?(?<type>[^\.]+?)(?<mod>(?:\*|@|\^|\[[\d,\:\?]*\])*)$");
+            = new Regex(@"^(?:(?<ns>[^\.]+(?:\.[^\.]+)*?)\.)?(?<type>[^\.\(]+?)(?<mod>(?:\*|@|\^|\[[\d,\:\?]*\])*)$");
 
         private static CRefKind ParseKind(string kind)
         {
@@ -274,6 +274,12 @@ namespace Mastersign.XmlDoc
         {
             var error = Parse(cref) as CRefErrorMessage;
             return error != null ? error.Message : null;
+        }
+
+        public string MemberKind(string cref)
+        {
+            var result = Parse(cref);
+            return result.Kind.ToString();
         }
 
         public string Namespace(string cref)

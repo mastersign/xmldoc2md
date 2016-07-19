@@ -31,7 +31,7 @@ namespace Mastersign.XmlDoc
             Assert.IsInstanceOf<CRefNamespace>(CRefParsing.Parse("N:A"));
             Assert.IsInstanceOf<CRefType>(CRefParsing.Parse("T:A"));
             Assert.IsInstanceOf<CRefField>(CRefParsing.Parse("F:A.x"));
-            Assert.IsInstanceOf<CRefMethod>(CRefParsing.Parse("M:A.x()"));
+            Assert.IsInstanceOf<CRefMethod>(CRefParsing.Parse("M:A.x"));
             Assert.IsInstanceOf<CRefProperty>(CRefParsing.Parse("P:A.x"));
             Assert.IsInstanceOf<CRefEvent>(CRefParsing.Parse("E:A.x"));
             Assert.IsInstanceOf<CRefParsingResult>(CRefParsing.Parse("X:A"));
@@ -97,13 +97,13 @@ namespace Mastersign.XmlDoc
         [Test]
         public void NamespaceFromMethodTest()
         {
-            Assert.IsNull(parsing.Namespace("M:A.x()"));
-            Assert.AreEqual("A", parsing.Namespace("M:A.B.x()"));
-            Assert.AreEqual("A.B", parsing.Namespace("M:A.B.C.op_implicit(A.B.C)~A.B.X"));
+            Assert.IsNull(parsing.Namespace("M:A.x"));
+            Assert.AreEqual("A", parsing.Namespace("M:A.B.x"));
+            Assert.AreEqual("A.B", parsing.Namespace("M:A.B.C.op_implicit(A.C.D)~A.D.X"));
             Assert.AreEqual("A.B.C", parsing.Namespace("M:A.B.C.D.x(X,Y)"));
-            Assert.AreEqual("A.B", parsing.Namespace("M:A.B.C`1.x()"));
-            Assert.AreEqual("A.B`1", parsing.Namespace("M:A.B`1.C.x()"));
-            Assert.AreEqual("A.B`10", parsing.Namespace("M:A.B`10.C`1.x()"));
+            Assert.AreEqual("A.B", parsing.Namespace("M:A.B.C`1.x"));
+            Assert.AreEqual("A.B`1", parsing.Namespace("M:A.B`1.C.x"));
+            Assert.AreEqual("A.B`10", parsing.Namespace("M:A.B`10.C`1.x"));
             Assert.AreEqual("A.B`10", parsing.Namespace("M:A.B`10.C`1.x``2(``0,``1)"));
         }
 
@@ -176,12 +176,12 @@ namespace Mastersign.XmlDoc
         [Test]
         public void TypeNameFromMethodTest()
         {
-            Assert.AreEqual("B", parsing.TypeName("M:A.B.xyz()"));
+            Assert.AreEqual("B", parsing.TypeName("M:A.B.xyz"));
             Assert.AreEqual("C", parsing.TypeName("M:A.B.C.op_implicit(A.B.C)~A.B.X"));
             Assert.AreEqual("D", parsing.TypeName("M:A.B.C.D.x(X,Y)"));
-            Assert.AreEqual("C`1", parsing.TypeName("M:A.B.C`1.x()"));
-            Assert.AreEqual("C", parsing.TypeName("M:A.B`1.C.x()"));
-            Assert.AreEqual("C`1", parsing.TypeName("M:A.B`10.C`1.x()"));
+            Assert.AreEqual("C`1", parsing.TypeName("M:A.B.C`1.x"));
+            Assert.AreEqual("C", parsing.TypeName("M:A.B`1.C.x"));
+            Assert.AreEqual("C`1", parsing.TypeName("M:A.B`10.C`1.x"));
             Assert.AreEqual("C`1", parsing.TypeName("M:A.B`10.C`1.x``2(``0,``1)"));
         }
 
@@ -228,8 +228,10 @@ namespace Mastersign.XmlDoc
         [Test]
         public void MemberNameFromMethodTest()
         {
-            Assert.AreEqual("x", parsing.MemberName("M:A.x()"));
+            Assert.AreEqual("x", parsing.MemberName("M:A.x"));
             Assert.AreEqual("xyz", parsing.MemberName("M:A.B.C.xyz(Aa,Bb.Cc.Dd,Ee)"));
+            Assert.AreEqual("xyz", parsing.MemberName("M:A.xyz(A.B[])"));
+            Assert.AreEqual("xyz", parsing.MemberName("M:A.B.xyz(A.C[])"));
             Assert.AreEqual("_xY``1", parsing.MemberName("M:A.B._xY``1(Aa*,Bb.Cc.Dd@,``0)~A.E"));
         }
 
