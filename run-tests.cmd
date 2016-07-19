@@ -9,7 +9,7 @@ SET TEST_RUNNER=%~dp0\packages\NUnit.ConsoleRunner.3.4.1\tools\nunit3-console.ex
 IF NOT EXIST "%NUGET%" (
   ECHO.Downloading NuGet...
   SET NUGET_URL=https://dist.nuget.org/win-x86-commandline/latest/nuget.exe
-  CALL powershell -Command "& { $(New-Object System.Net.WebClient).DownloadFile('%NUGET_URL%', '%NUGET%') }"
+  CALL powershell -NoProfile -ExecutionPolicy Unrestricted -Command "& { $(New-Object System.Net.WebClient).DownloadFile('%NUGET_URL%', '%NUGET%') }"
 )
 
 REM --- Restore NuGet Packages ---
