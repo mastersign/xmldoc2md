@@ -1,17 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using MSTestExtensions;
+using NUnit.Framework;
 
 namespace Mastersign.XmlDoc
 {
-    [TestClass]
-    public class CRefParsingTest : BaseTest
+    [TestFixture]
+    public class CRefParsingTest
     {
         private CRefParsing parsing = new CRefParsing();
 
-        [TestMethod]
+        [Test]
         public void MemberKindTest()
         {
             Assert.Throws<ArgumentNullException>(() => { CRefParsing.Parse(null); });
@@ -26,7 +25,7 @@ namespace Mastersign.XmlDoc
             Assert.AreEqual(CRefKind.Invalid, CRefParsing.Parse("invalid syntax").Kind);
         }
 
-        [TestMethod]
+        [Test]
         public void ErrorMessage()
         {
             Assert.Throws<ArgumentNullException>(() => { parsing.ErrorMessage(null); });
@@ -36,13 +35,13 @@ namespace Mastersign.XmlDoc
             Assert.AreEqual("Message ", parsing.ErrorMessage("! Message "));
         }
 
-        [TestMethod]
+        [Test]
         public void NamespaceExceptionTest()
         {
             Assert.Throws<ArgumentNullException>(() => { parsing.Namespace(null); });
         }
 
-        [TestMethod]
+        [Test]
         public void NamespaceNullTest()
         {
             Assert.IsNull(parsing.Namespace(""));
@@ -50,7 +49,7 @@ namespace Mastersign.XmlDoc
             Assert.IsNull(parsing.Namespace("X:unknown"));
         }
 
-        [TestMethod]
+        [Test]
         public void NamespaceFromNamespaceTest()
         {
             Assert.AreEqual("Aa", parsing.Namespace("N:Aa"));
@@ -58,7 +57,7 @@ namespace Mastersign.XmlDoc
             Assert.AreEqual("Aa.Bb.Cc", parsing.Namespace("N:Aa.Bb.Cc"));
         }
 
-        [TestMethod]
+        [Test]
         public void NamespaceFromTypeTest()
         {
             Assert.IsNull(parsing.Namespace("T:A"));
@@ -69,7 +68,7 @@ namespace Mastersign.XmlDoc
             Assert.AreEqual("A.B`10", parsing.Namespace("T:A.B`10.C`1"));
         }
 
-        [TestMethod]
+        [Test]
         public void NamespaceFromFieldTest()
         {
             Assert.IsNull(parsing.Namespace("F:A.x"));
@@ -81,7 +80,7 @@ namespace Mastersign.XmlDoc
             Assert.AreEqual("A.B`10", parsing.Namespace("F:A.B`10.C`1.x"));
         }
 
-        [TestMethod]
+        [Test]
         public void NamespaceFromMethodTest()
         {
             Assert.IsNull(parsing.Namespace("M:A.x()"));
@@ -94,7 +93,7 @@ namespace Mastersign.XmlDoc
             Assert.AreEqual("A.B`10", parsing.Namespace("M:A.B`10.C`1.x``2(``0,``1)"));
         }
 
-        [TestMethod]
+        [Test]
         public void NamespaceFromPropertyTest()
         {
             Assert.IsNull(parsing.Namespace("P:A.x"));
@@ -106,7 +105,7 @@ namespace Mastersign.XmlDoc
             Assert.AreEqual("A.B`10", parsing.Namespace("P:A.B`10.C`1.x"));
         }
 
-        [TestMethod]
+        [Test]
         public void NamespaceFromEventTest()
         {
             Assert.IsNull(parsing.Namespace("E:A.x"));
@@ -118,13 +117,13 @@ namespace Mastersign.XmlDoc
             Assert.AreEqual("A.B`10", parsing.Namespace("E:A.B`10.C`1.x"));
         }
 
-        [TestMethod]
+        [Test]
         public void TypeNameExceptionTest()
         {
             Assert.Throws<ArgumentNullException>(() => { parsing.TypeName(null); });
         }
 
-        [TestMethod]
+        [Test]
         public void TypeNameNullTest()
         {
             Assert.IsNull(parsing.TypeName(""));
@@ -133,7 +132,7 @@ namespace Mastersign.XmlDoc
             Assert.IsNull(parsing.TypeName("N:A.B"));
         }
 
-        [TestMethod]
+        [Test]
         public void TypeNameFromTypeTest()
         {
             Assert.AreEqual("A", parsing.TypeName("T:A"));
@@ -148,7 +147,7 @@ namespace Mastersign.XmlDoc
             Assert.AreEqual("C`2", parsing.TypeName("T:A.B´1.C`2"));
         }
 
-        [TestMethod]
+        [Test]
         public void TypeNameFromFieldTest()
         {
             Assert.AreEqual("A", parsing.TypeName("F:A.xyz"));
@@ -160,7 +159,7 @@ namespace Mastersign.XmlDoc
             Assert.AreEqual("C`1", parsing.TypeName("F:A.B`10.C`1.x"));
         }
 
-        [TestMethod]
+        [Test]
         public void TypeNameFromMethodTest()
         {
             Assert.AreEqual("B", parsing.TypeName("M:A.B.xyz()"));
@@ -172,7 +171,7 @@ namespace Mastersign.XmlDoc
             Assert.AreEqual("C`1", parsing.TypeName("M:A.B`10.C`1.x``2(``0,``1)"));
         }
 
-        [TestMethod]
+        [Test]
         public void TypeNameFromPropertyTest()
         {
             Assert.AreEqual("B", parsing.TypeName("P:A.B.x"));
@@ -183,7 +182,7 @@ namespace Mastersign.XmlDoc
             Assert.AreEqual("C`1", parsing.TypeName("P:A.B`10.C`1.x"));
         }
 
-        [TestMethod]
+        [Test]
         public void TypeNameFromEventTest()
         {
             Assert.AreEqual("A", parsing.TypeName("E:A.xyz"));
