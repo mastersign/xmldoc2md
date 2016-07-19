@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
+using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Xml;
 
 namespace Mastersign.XmlDoc
 {
@@ -60,12 +61,22 @@ namespace Mastersign.XmlDoc
 
     public class CRefType : CRefNamespace
     {
-        public string Type { get; private set; }
+        public string TypeName { get; private set; }
+
+        public string FullTypeName
+        {
+            get
+            {
+                return string.IsNullOrEmpty(Namespace)
+                    ? TypeName
+                    : Namespace + "." + TypeName;
+            }
+        }
 
         protected CRefType(CRefKind kind, string ns, string type)
             : base(kind, ns)
         {
-            Type = type;
+            TypeName = type;
         }
 
         public CRefType(string ns, string type)
@@ -76,12 +87,12 @@ namespace Mastersign.XmlDoc
 
     public abstract class CRefMember : CRefType
     {
-        public string Name { get; private set; }
+        public string MemberName { get; private set; }
 
         protected CRefMember(CRefKind kind, string ns, string type, string name)
             : base(kind, ns, type)
         {
-            Name = name;
+            MemberName = name;
         }
     }
 
@@ -273,7 +284,7 @@ namespace Mastersign.XmlDoc
         public string ErrorMessage(string cref)
         {
             var error = Parse(cref) as CRefErrorMessage;
-            return error != null ? error.Message : null;
+            return error != null ? error.Message ?? string.Empty : string.Empty;
         }
 
         public string MemberKind(string cref)
@@ -285,19 +296,19 @@ namespace Mastersign.XmlDoc
         public string Namespace(string cref)
         {
             var ns = Parse(cref) as CRefNamespace;
-            return ns != null ? ns.Namespace : null;
+            return ns != null ? ns.Namespace ?? string.Empty : string.Empty;
         }
 
         public string TypeName(string cref)
         {
             var type = Parse(cref) as CRefType;
-            return type != null ? type.Type : null;
+            return type != null ? type.TypeName ?? string.Empty : string.Empty;
         }
 
         public string MemberName(string cref)
         {
             var member = Parse(cref) as CRefMember;
-            return member != null ? member.Name : null;
+            return member != null ? member.MemberName ?? string.Empty : string.Empty;
         }
 
         public CRefArgumentType[] Arguments(string cref)
@@ -318,20 +329,163 @@ namespace Mastersign.XmlDoc
 
     public class CRefFormatting
     {
-        public string FormatLabel(string cref)
+        private static Regex GenericTypePattern
+            = new Regex(@"`(\d+)");
+
+        private static Regex GenericMethodPattern
+            = new Regex(@"``(\d+)$");
+
+        public CRefFormatting()
+        {
+            FileNameExtension = ".md";
+            UrlBase = "";
+            UrlFileNameExtension = ".html";
+        }
+
+        public string FileNameExtension { get; set; }
+
+        public string UrlBase { get; set; }
+
+        public string UrlFileNameExtension { get; set; }
+
+        public XmlDocument[] XmlDocs { get; set; }
+
+        private delegate bool ElementCriteria(XmlElement node);
+
+        private XmlElement FindFirstElement(string xpath, ElementCriteria criteria)
+        {
+            foreach (var xmlDoc in XmlDocs)
+            {
+                var nodeSet = xmlDoc.SelectNodes(xpath);
+                foreach (XmlElement el in nodeSet)
+                {
+                    if (criteria(el)) return el;
+                }
+            }
+            return null;
+        }
+
+        private string[] GetTypeArgumentNames(string typeName, int n)
+        {
+            var memberEl = FindFirstElement("/doc/members/member",
+                el => el.HasAttribute("name")
+                   && el.GetAttribute("name") == "T:" + typeName);
+            var result = new string[n];
+            var i = 0;
+            if (memberEl != null)
+            {
+                var typeParamEls = memberEl.SelectNodes("typeparam");
+                if (typeParamEls != null)
+                {
+                    foreach(XmlElement el in typeParamEls)
+                    {
+                        result[i] = el.GetAttribute("name");
+                        i++;
+                        if (i >= n) break;
+                    }
+                }
+            }
+            for (; i < n; i++)
+            {
+                result[i] = "T" + (i + 1);
+            }
+            return result;
+        }
+
+        private string FormatGenerics(CRefType cref)
+        {
+            return GenericTypePattern.Replace(cref.FullTypeName, m =>
+            {
+                var n = int.Parse(m.Groups[1].Value);
+                var argumentNames = GetTypeArgumentNames(
+                    cref.FullTypeName.Substring(0, m.Index + m.Length), n);
+                if (argumentNames == null)
+                {
+                    argumentNames = new string[n];
+                    for (var i = 0; i < n; i++) argumentNames[i] = "T" + (i + 1);
+                }
+                return "<" + string.Join(", ", argumentNames) + ">";
+            });
+        }
+
+        private string ShortName(string name)
+        {
+            return name.Contains(".")
+                ? name.Substring(name.LastIndexOf('.') + 1)
+                : name;
+        }
+
+        private string FormatArguments(CRefArgumentType[] arguments)
+        {
+            throw new NotImplementedException();
+        }
+
+        public string EscapeMarkdown(string text)
+        {
+            return text
+                .Replace("<", "&lt;")
+                .Replace(">", "&gt;");
+        }
+
+        public string Label(string cref)
         {
             var result = CRefParsing.Parse(cref);
 
             switch (result.Kind)
             {
                 case CRefKind.Namespace: return ((CRefNamespace)result).Namespace;
-                case CRefKind.Type: return ((CRefType)result).Type;
-                case CRefKind.Field: return ((CRefMember)result).Name;
-                case CRefKind.Method: return ((CRefMember)result).Name;
-                case CRefKind.Property: return ((CRefMember)result).Name;
-                case CRefKind.Event: return ((CRefMember)result).Name;
+                case CRefKind.Type: return ShortName(FormatGenerics((CRefType)result));
+                case CRefKind.Field: return ((CRefMember)result).MemberName;
+                case CRefKind.Method: return ((CRefMember)result).MemberName;
+                case CRefKind.Property: return ((CRefMember)result).MemberName;
+                case CRefKind.Event: return ((CRefMember)result).MemberName;
                 default: return "UNKNOWN_KIND_OF_MEMBER";
             }
+        }
+
+        public string FullLabel(string cref)
+        {
+            var result = CRefParsing.Parse(cref);
+
+            switch (result.Kind)
+            {
+                case CRefKind.Namespace: return ((CRefNamespace)result).Namespace;
+                case CRefKind.Type: return FormatGenerics((CRefType)result);
+                case CRefKind.Field: return ((CRefMember)result).MemberName;
+                case CRefKind.Method: return ((CRefMember)result).MemberName;
+                case CRefKind.Property: return ((CRefMember)result).MemberName;
+                case CRefKind.Event: return ((CRefMember)result).MemberName;
+                default: return "UNKNOWN_KIND_OF_MEMBER";
+            }
+        }
+
+        public string CRef(Type t)
+        {
+            return t.FullName.Replace('+', '.');
+        }
+
+        public string FileName(Type t)
+        {
+            return CRef(t) + FileNameExtension;
+        }
+
+        public string FileName(string cref)
+        {
+            var result = CRefParsing.Parse(cref);
+
+            if (result.Kind == CRefKind.Namespace)
+            {
+                var ns = (CRefNamespace)result;
+                return ns.Namespace + FileNameExtension;
+            }
+            var type = result as CRefType;
+            if (type != null)
+            {
+                return type.Namespace != null
+                    ? type.Namespace + "." + type.TypeName + FileNameExtension
+                    : type.TypeName + FileNameExtension;
+            }
+            return null;
         }
     }
 }

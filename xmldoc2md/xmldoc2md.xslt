@@ -6,8 +6,6 @@
 
   <template match="text()">
     <value-of select="normalize-space(.)"/>
-    <text>
-</text>
   </template>
 
   <template match="c">
@@ -16,9 +14,29 @@
     <text>` </text>
   </template>
 
+  <template match="strong|b">
+    <text> **</text>
+    <value-of select="."/>
+    <text>** </text>
+  </template>
+
+  <template match="em|i">
+    <text> _</text>
+    <value-of select="."/>
+    <text>_ </text>
+  </template>
+
   <template match="para">
     <apply-templates />
     <text>
+</text>
+  </template>
+
+  <template match="code">
+    <text>```
+</text>
+    <value-of select="text()" />
+    <text>```
 </text>
   </template>
 
@@ -41,30 +59,19 @@
 
   <template match="see">
     <text>[`</text>
-    <value-of select="cf:FormatLabel(@cref)"/>
+    <value-of select="cf:Label(@cref)"/>
     <text>`][]
 </text>
   </template>
 
-  <template name="cref-label">
-    <param name="cref" />
-    <variable name="member-type" select="cp:MemberType($cref)" />
-    <choose>
-      <when test="$member-type = 'Type'">
-        <value-of select="cp:TypeName($cref)"/>
-      </when>
-      <when test="$member-type = 'Method'">
-        <value-of select="cp:MethodName($cref)"/>
-      </when>
-    </choose>
-  </template>
-
-  <template name="cref-url">
-
-  </template>
-
-  <template name="cref-id">
-
+  <template match="typeparam">
+    <text>* **</text>
+    <value-of select="@name"/>
+    <text>**
+  </text>
+    <apply-templates />
+    <text>
+</text>
   </template>
 
 </stylesheet>
