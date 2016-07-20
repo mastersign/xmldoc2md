@@ -9,26 +9,60 @@
 
   <template match="member">
     <text>### </text>
-    <value-of select="cf:Label(@name)"/>
+    <value-of select="cf:EscapeMarkdown(cf:Label(@name))"/>
     <text>
 </text>
-    <apply-templates select="summary"/>
-    <apply-templates select="remarks"/>
-    <text>
+    <apply-templates select="summary" />
+    <if test="typeparam">
+      <text>#### Type Parameter
+
 </text>
+      <apply-templates select="typeparam" />
+    </if>
+    <if test="value">
+      <text>#### Value
+</text>
+      <apply-templates select="value" />
+      <text>
+</text>
+    </if>
+    <if test="param">
+      <text>#### Parameter
+
+</text>
+      <apply-templates select="param" />
+      <text>
+</text>
+    </if>
+    <if test="returns">
+      <text>#### Return Value
+</text>
+      <apply-templates select="returns" />
+      <text>
+</text>
+    </if>
+    <if test="remarks">
+      <text>#### Remarks
+</text>
+      <apply-templates select="remarks" />
+    </if>
+    <apply-templates select="example" />
+    <if test="seealso">
+      <text>#### See Also
+
+</text>
+      <apply-templates select="seealso" />
+      <text>
+</text>
+    </if>
   </template>
 
-  <template match="summary">
+  <template match="example">
+    <text>#### Example
+</text>
     <apply-templates />
     <text>
-</text>
-  </template>
 
-  <template match="remarks">
-    <text>### Remarks
-</text>
-    <apply-templates />
-    <text>
 </text>
   </template>
 

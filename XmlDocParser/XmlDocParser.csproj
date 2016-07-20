@@ -47,6 +47,7 @@
     <Compile Include="..\xmldoc2md\xmldoc2md.cs">
       <Link>xmldoc2md.cs</Link>
     </Compile>
+    <Compile Include="CRefFormattingTest.cs" />
     <Compile Include="CRefParsingTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

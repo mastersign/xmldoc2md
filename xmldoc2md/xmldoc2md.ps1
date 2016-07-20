@@ -31,7 +31,15 @@ foreach ($p in $assemblyPaths)
 Set-Alias new New-Object
 $myDir = [IO.Path]::GetDirectoryName($MyInvocation.MyCommand.Definition)
 
-Add-Type -Path "$myDir\xmldoc2md.cs" -ReferencedAssemblies "System.Xml.dll"
+try
+{
+	Add-Type -Path "$myDir\xmldoc2md.cs" -ReferencedAssemblies "System.Xml.dll"
+}
+catch
+{
+	Write-Warning $_.Exception.Message
+	return
+}
 $crefParsing = new Mastersign.XmlDoc.CRefParsing
 $crefFormatting = new Mastersign.XmlDoc.CRefFormatting
 
@@ -64,6 +72,7 @@ foreach ($p in $assemblyPaths)
 		Write-Warning $_.Exception.Message
 	}
 }
+$crefFormatting.Assemblies = $assemblyRefs;
 $crefFormatting.XmlDocs = $xmlDocs;
 
 function parse-cref($cref)
@@ -92,15 +101,25 @@ function type-member($typeName) { all-member | ? { $_.name -eq "T:${typeName}" }
 function field-member($typeName) { all-member | ? { $_.name -like "F:${typeName}.*" } }
 function event-member($typeName) { all-member | ? { $_.name -like "E:${typeName}.*" } }
 function property-member($typeName) { all-member | ? { $_.name -like "P:${typeName}.*" } }
-function ctor-member($typeName) { all-member | ? { $_.name -like "M:${typeName}.#ctor*" } }
+function ctor-member($typeName)
+{
+	all-member | ? {
+		$_.name.StartsWith("M:${typeName}.#ctor") -or
+		$_.name.Equals("M:${typeName}.#cctor")
+	}
+}
 function method-member($typeName)
 {
-	all-member | ? { ($_.name -like "M:${typeName}.*") -and !($_.name -like "*#ctor*") }
+	all-member | ? {
+		($_.name -match "M:${typeName}\.[^\.]+(\(.+\))?$") -and
+		!($_.name.Contains("#ctor") -or $_.name.EndsWith("#cctor"))
+	}
 }
 
-function transform($writer, $style, [System.Xml.XmlElement]$m)
+function transform($writer, $style, [System.Xml.XmlElement]$e)
 {
-    $sr = new System.IO.StringReader ("<partial>" + [string]$m.OuterXml + "</partial>")
+	if (!$e) { return }
+    $sr = new System.IO.StringReader ("<partial>" + [string]$e.OuterXml + "</partial>")
     $xr = [System.Xml.XmlReader]::Create($sr)
     $xmlArgs = new System.Xml.Xsl.XsltArgumentList
 	$xmlArgs.AddExtensionObject("urn:CRefParsing", $crefParsing)
@@ -111,10 +130,30 @@ function transform($writer, $style, [System.Xml.XmlElement]$m)
     }
     catch
     {
-        Write-Warning $_.Exception.Message
+        Write-Warning $_.Exception
     }
     $xr.Close()
     $sr.Close()
+}
+
+function write-memberblock($writer, $nodes, $title, $ref)
+{
+	if (!$nodes) { return }
+	$writer.WriteLine("## $title {#$ref}")
+	$writer.WriteLine()
+    foreach ($n in $nodes)
+    {
+        transform $writer $memberStyle $n
+    }
+}
+
+function type-variation([Type]$type)
+{
+	if ($type.IsInterface) { return "Interface"	}
+	elseif ($type.IsEnum) { return "Enumeration" }
+	elseif ([MulticastDelegate].IsAssignableFrom($type)) { return "Delegate" }
+	elseif ($type.IsValueType) { return "Struct" }
+	else { return "Class" }
 }
 
 [array]$types = public-types | sort { $_.FullName }
@@ -123,9 +162,12 @@ Write-Host "Types"
 foreach ($t in $types)
 {
 	$tFile = $crefFormatting.FileName($t)
+	$tCRefName = $crefFormatting.CRefTypeName($t)
 	$tCRef = $crefFormatting.CRef($t)
+	$tParseResult = parse-cref $tCRef
+
 	Write-Host "  - $($t.FullName)"
-    $typeNode = type-member $tCRef
+    $typeNode = type-member $tCRefName
 
     $out = [IO.File]::Open("$TargetPath\$tFile", [IO.FileMode]::Create, [IO.FileAccess]::Write)
     $writer = new System.IO.StreamWriter($out, (new System.Text.UTF8Encoding ($false)))
@@ -137,31 +179,37 @@ foreach ($t in $types)
 	$writer.WriteLine("-->")
 	$writer.WriteLine()
 
-    transform $writer $typeStyle $typeNode
+	$typeVariation = type-variation $t
+	$writer.WriteLine("# $($crefFormatting.EscapeMarkdown($crefFormatting.Label($tCref))) $typeVariation")
 
-	# Constructors
-    [array]$ctorNodes = ctor-member $tCRef
-    if ($ctorNodes)
-    {
-        $writer.WriteLine("## Constructors {#ctors}")
-		$writer.WriteLine()
-        foreach ($ctorNode in $ctorNodes)
-        {
-            transform $writer $memberStyle $ctorNode
-        }
-    }
+	if ($typeNode)
+	{
+		transform $writer $typeStyle $($typeNode.SelectSingleNode("summary"))
+	}
 
-	# Methods
-    [array]$methodNodes = method-member $tCRef
-    if ($methodNodes)
-    {
-        $writer.WriteLine("## Methods {#methods}")
+	[Reflection.AssemblyName]$aName = $t.Assembly.GetName()
+	$writer.WriteLine("**Absolute Name:** ``$($crefFormatting.FullLabel($tCRef))``  ")
+	$writer.WriteLine("**Namespace:** $($t.Namespace)  ")
+	$writer.WriteLine("**Assembly:** $($aName.Name), Version $($aName.Version)")
+	$writer.WriteLine()
+
+    [array]$ctorNodes = ctor-member $tCRefName
+    [array]$fieldNodes = field-member $tCRefName
+    [array]$eventNodes = event-member $tCRefName
+    [array]$propertyNodes = property-member $tCRefName
+    [array]$methodNodes = method-member $tCRefName
+
+	if ($typeNode)
+	{
+		transform $writer $typeStyle $typeNode
 		$writer.WriteLine()
-        foreach ($methodNode in $methodNodes)
-        {
-            transform $writer $memberStyle $methodNode
-        }
-    }
+	}
+
+	write-memberblock $writer $ctorNodes "Constructors" "ctors"
+	write-memberblock $writer $fieldNodes "Fields" "fields"
+	write-memberblock $writer $eventNodes "Events" "events"
+	write-memberblock $writer $propertyNodes "Properties" "properties"
+	write-memberblock $writer $methodNodes "Methods" "methods"
 
     $writer.Close()
     $out.Close()

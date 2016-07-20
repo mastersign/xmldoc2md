@@ -40,11 +40,17 @@ namespace Mastersign.XmlDoc
         }
 
         [Test]
+        public void ArgumentsTest()
+        {
+            Assert.AreEqual(0, ((CRefMethod)CRefParsing.Parse("M:A.x")).Arguments.Length);
+        }
+
+        [Test]
         public void ErrorMessage()
         {
             Assert.Throws<ArgumentNullException>(() => { parsing.ErrorMessage(null); });
-            Assert.IsNull(parsing.ErrorMessage(""));
-            Assert.IsNull(parsing.ErrorMessage("T:A"));
+            Assert.AreEqual(string.Empty, parsing.ErrorMessage(""));
+            Assert.AreEqual(string.Empty, parsing.ErrorMessage("T:A"));
             Assert.AreEqual("Message", parsing.ErrorMessage("!Message"));
             Assert.AreEqual("Message ", parsing.ErrorMessage("! Message "));
         }
@@ -56,11 +62,11 @@ namespace Mastersign.XmlDoc
         }
 
         [Test]
-        public void NamespaceNullTest()
+        public void NamespaceEmptyTest()
         {
-            Assert.IsNull(parsing.Namespace(""));
-            Assert.IsNull(parsing.Namespace("! error"));
-            Assert.IsNull(parsing.Namespace("X:unknown"));
+            Assert.AreEqual(string.Empty, parsing.Namespace(""));
+            Assert.AreEqual(string.Empty, parsing.Namespace("! error"));
+            Assert.AreEqual(string.Empty, parsing.Namespace("X:unknown"));
         }
 
         [Test]
@@ -74,7 +80,7 @@ namespace Mastersign.XmlDoc
         [Test]
         public void NamespaceFromTypeTest()
         {
-            Assert.IsNull(parsing.Namespace("T:A"));
+            Assert.AreEqual(string.Empty, parsing.Namespace("T:A"));
             Assert.AreEqual("A", parsing.Namespace("T:A.B"));
             Assert.AreEqual("A.B", parsing.Namespace("T:A.B.C"));
             Assert.AreEqual("A.B.C", parsing.Namespace("T:A.B.C.D"));
@@ -85,7 +91,7 @@ namespace Mastersign.XmlDoc
         [Test]
         public void NamespaceFromFieldTest()
         {
-            Assert.IsNull(parsing.Namespace("F:A.x"));
+            Assert.AreEqual(string.Empty, parsing.Namespace("F:A.x"));
             Assert.AreEqual("A", parsing.Namespace("F:A.B.xyz"));
             Assert.AreEqual("A.B", parsing.Namespace("F:A.B.C.x"));
             Assert.AreEqual("A.B.C", parsing.Namespace("F:A.B.C.D.x"));
@@ -97,7 +103,7 @@ namespace Mastersign.XmlDoc
         [Test]
         public void NamespaceFromMethodTest()
         {
-            Assert.IsNull(parsing.Namespace("M:A.x"));
+            Assert.AreEqual(string.Empty, parsing.Namespace("M:A.x"));
             Assert.AreEqual("A", parsing.Namespace("M:A.B.x"));
             Assert.AreEqual("A.B", parsing.Namespace("M:A.B.C.op_implicit(A.C.D)~A.D.X"));
             Assert.AreEqual("A.B.C", parsing.Namespace("M:A.B.C.D.x(X,Y)"));
@@ -110,7 +116,7 @@ namespace Mastersign.XmlDoc
         [Test]
         public void NamespaceFromPropertyTest()
         {
-            Assert.IsNull(parsing.Namespace("P:A.x"));
+            Assert.AreEqual(string.Empty, parsing.Namespace("P:A.x"));
             Assert.AreEqual("A", parsing.Namespace("P:A.B.xyz"));
             Assert.AreEqual("A.B", parsing.Namespace("P:A.B.C.Item(X)"));
             Assert.AreEqual("A.B.C", parsing.Namespace("P:A.B.C.D.x"));
@@ -122,7 +128,7 @@ namespace Mastersign.XmlDoc
         [Test]
         public void NamespaceFromEventTest()
         {
-            Assert.IsNull(parsing.Namespace("E:A.x"));
+            Assert.AreEqual(string.Empty, parsing.Namespace("E:A.x"));
             Assert.AreEqual("A", parsing.Namespace("E:A.B.xyz"));
             Assert.AreEqual("A.B", parsing.Namespace("E:A.B.C.x"));
             Assert.AreEqual("A.B.C", parsing.Namespace("E:A.B.C.D.x"));
@@ -138,12 +144,12 @@ namespace Mastersign.XmlDoc
         }
 
         [Test]
-        public void TypeNameNullTest()
+        public void TypeNameEmptyTest()
         {
-            Assert.IsNull(parsing.TypeName(""));
-            Assert.IsNull(parsing.TypeName("! error"));
-            Assert.IsNull(parsing.TypeName("X:unknown"));
-            Assert.IsNull(parsing.TypeName("N:A.B"));
+            Assert.AreEqual(string.Empty, parsing.TypeName(""));
+            Assert.AreEqual(string.Empty, parsing.TypeName("! error"));
+            Assert.AreEqual(string.Empty, parsing.TypeName("X:unknown"));
+            Assert.AreEqual(string.Empty, parsing.TypeName("N:A.B"));
         }
 
         [Test]
@@ -209,11 +215,11 @@ namespace Mastersign.XmlDoc
         }
 
         [Test]
-        public void MemberNameNullTest()
+        public void MemberNameEmptyTest()
         {
-            Assert.IsNull(parsing.MemberName("N:A.B.C"));
-            Assert.IsNull(parsing.MemberName("T:A.B.C"));
-            Assert.IsNull(parsing.MemberName("X:A.B.C"));
+            Assert.AreEqual(string.Empty, parsing.MemberName("N:A.B.C"));
+            Assert.AreEqual(string.Empty, parsing.MemberName("T:A.B.C"));
+            Assert.AreEqual(string.Empty, parsing.MemberName("X:A.B.C"));
         }
 
         [Test]
@@ -258,7 +264,7 @@ namespace Mastersign.XmlDoc
         {
             Assert.IsNull(parsing.ReturnType("M:A.x"));
             Assert.AreEqual("A.D", parsing.ReturnType("M:A.B.x(A.C)~A.D.E").Namespace);
-            Assert.AreEqual("E", parsing.ReturnType("M:A.B.x(A.C)~A.D.E").Type);
+            Assert.AreEqual("E", parsing.ReturnType("M:A.B.x(A.C)~A.D.E").TypeName);
         }
     }
 }

@@ -9,41 +9,46 @@
   <output encoding="utf-8" method="text" omit-xml-declaration="yes" standalone="yes" />
 
   <template match="member">
-    <text># </text>
-    <value-of select="cf:EscapeMarkdown(cf:Label(@name))"/>
-    <text>
-Full Name:
-`</text>
-    <value-of select="cf:FullLabel(@name)"/>
-    <text>`
-
-</text>
-    <choose>
-      <when test="typeparam">
-
-      </when>
-    </choose>
-    <apply-templates select="summary"/>
-    <apply-templates select="remarks"/>
     <if test="typeparam">
-      <text>## Type Parameter {#type-parameter}
+      <text>**Type Parameter**
 
 </text>
       <apply-templates select="typeparam" />
     </if>
-  </template>
+    <if test="param">
+      <text>## Parameter
 
-  <template match="summary">
-    <text>## Summary
 </text>
-    <apply-templates />
+      <apply-templates select="param" />
+      <text>
+</text>
+    </if>
+    <if test="returns">
+      <text>## Return Value
+</text>
+      <apply-templates select="returns" />
+      <text>
+</text>
+    </if>
+    <if test="remarks">
+      <text>## Remarks
+</text>
+      <apply-templates select="remarks" />
+    </if>
+    <apply-templates select="example" />
+    <if test="seealso">
+      <text>## See Also
+
+</text>
+      <apply-templates select="seealso" />
+    </if>
     <text>
-
 </text>
+
   </template>
 
-  <template match="remarks">
-    <text>## Remarks
+  <template match="example">
+    <text>## Example
 </text>
     <apply-templates />
     <text>
