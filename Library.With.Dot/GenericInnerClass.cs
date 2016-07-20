@@ -18,12 +18,16 @@ namespace Library.With.Dot
         /// <typeparam name="TM3">Method type parameter.</typeparam>
         /// <param name="t1">Type from class type parameter.</param>
         /// <param name="t3">Type from method type parameter.</param>
-        public void Method1<TM3>(TC1 t1, TM3 t3) { }
+        /// <returns>A value of <typeparamref name="TC2"/>.</returns>
+        public TC2 Method1<TM3>(TC1 t1, TM3 t3)
+        {
+            return default(TC2);
+        }
 
         /// <summary>
         /// An non generic inner class of a generic class.
         /// </summary>
-        public class GenericInnerClass1
+        public class GenericInnerClass
         {
             /// <summary>
             /// A non generic method of a non generic inner class in a generic class.
@@ -41,7 +45,7 @@ namespace Library.With.Dot
         /// A generic inner class in a generic class.
         /// </summary>
         /// <typeparam name="TC3">Type parameter 3.</typeparam>
-        public class GenericInnerClass2<TC3>
+        public class GenericInnerClass<TC3>
         {
             /// <summary>
             /// A non generic method referencing type parameters from its class and an outer class.

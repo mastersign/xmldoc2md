@@ -39,6 +39,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DemoDelegate.cs" />
     <Compile Include="GenericInnerClass.cs" />
     <Compile Include="InnerClass.cs" />
     <Compile Include="SimpleType.cs" />
