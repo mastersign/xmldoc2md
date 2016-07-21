@@ -142,6 +142,20 @@
 </text>
   </template>
 
+  <template match="exception">
+    <text>* [**</text>
+    <value-of select="cf:EscapeMarkdown(cf:Label(@cref))"/>
+    <text>**](</text>
+    <value-of select="'#'"/>
+    <text>)  </text>
+    <text>
+  </text>
+    <apply-templates />
+    <text>
+</text>
+  </template>
+
+
   <template match="paramref">
     <text> `</text>
     <value-of select="@name"/>

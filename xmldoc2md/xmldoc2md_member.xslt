@@ -39,6 +39,16 @@
 </text>
       <apply-templates select="returns" />
       <text>
+
+</text>
+    </if>
+    <if test="exception">
+      <text>#### Exceptions
+
+</text>
+      <apply-templates select="exception" />
+      <text>
+
 </text>
     </if>
     <if test="remarks">
