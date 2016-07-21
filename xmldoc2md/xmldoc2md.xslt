@@ -126,8 +126,7 @@
   <template match="list[@type='bullet']/item/term">
     <text>**</text>
     <value-of select="."/>
-    <text>**</text>
-    <text>  </text>
+    <text>**  </text>
     <text>
   </text>
   </template>
@@ -152,7 +151,8 @@
   <template match="param">
     <text>* **</text>
     <value-of select="@name"/>
-    <text>**
+    <text>**  </text>
+    <text>
   </text>
     <apply-templates />
     <text>
@@ -162,7 +162,8 @@
   <template match="typeparam">
     <text>* **</text>
     <value-of select="@name"/>
-    <text>**
+    <text>**  </text>
+    <text>
   </text>
     <apply-templates />
     <text>
