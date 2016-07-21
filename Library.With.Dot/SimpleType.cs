@@ -40,6 +40,19 @@ namespace Nested.Namespace
     /// <para>
     /// This <strong>class description</strong> is used to test <em>some markup</em>.
     /// </para>
+    /// <para>
+    /// Some interesting types and methods:
+    /// <see cref="SimpleType.ProtectedMethod"/>,<br/>
+    /// <see cref="SimpleType.OverloadedMethod(string, int)"/>,<br/>
+    /// <see cref="Library.With.Dot.DemoDelegate"/>,<br/>
+    /// <see cref="Library.With.Dot.OuterClass"/>,<br/>
+    /// <see cref="Library.With.Dot.OuterClass.MethodA(int, double)"/>,<br/>
+    /// <see cref="Library.With.Dot.OuterClass.InnerClass"/>,<br/>
+    /// <see cref="Library.With.Dot.OuterClass.InnerClass.IWillRise"/>,<br/>
+    /// <see cref="Library.With.Dot.GenericOuterClass{TC1, TC2}"/>,<br/>
+    /// <see cref="Library.With.Dot.GenericOuterClass{TC1, TC2}.Method1{TM3}(TC1, TM3)"/>,<br/>
+    /// <see cref="Library.With.Dot.GenericOuterClass{TC1, TC2}.GenericInnerClass{TC3}.Method(TC1, TC3)"/>.
+    /// </para>
     /// </summary>
     /// <example>
     /// This example shows the instantiation of <see cref="SimpleType"/>.
@@ -102,6 +115,68 @@ namespace Nested.Namespace
         public Dictionary<DateTime, SimpleType> Prop2 { get; set; }
 
         /// <summary>
+        /// This is a private Method an it <em>should not</em> be documented.
+        /// </summary>
+        /// <param name="a">The left operand.</param>
+        /// <param name="b">The right operand.</param>
+        /// <returns>An <see cref="int"/> with the value of
+        /// <paramref name="a"/> <c>+</c> <paramref name="b"/>.</returns>
+        private int PrivateMethod(int a, int b) { return a + b; }
+
+        /// <summary>
+        /// This is an internal Method an it <em>should not</em> be documented.
+        /// </summary>
+        /// <param name="a">The left operand.</param>
+        /// <param name="b">The right operand.</param>
+        /// <returns>An <see cref="int"/> with the value of
+        /// <paramref name="a"/> <c>+</c> <paramref name="b"/>.</returns>
+        internal int InternalMethod(int a, int b) { return a + b; }
+
+        /// <summary>
+        /// This is a protected Method and it <em>should</em> be documented.
+        /// </summary>
+        /// <returns>An <see cref="int"/> with the value of <c>0</c>.</returns>
+        protected int ProtectedMethod() { return 0; }
+
+        /// <summary>
+        /// An overloaded method.
+        /// </summary>
+        /// <param name="x">A simple parameter.</param>
+        /// <returns>The value of the given parameter.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">If the given value is negative.</exception>
+        /// <exception cref="InvalidOperationException">If the simple type is not in the mood.</exception>
+        public int OverloadedMethod(int x) { return x; }
+
+        /// <summary>
+        /// The first variation of the overloaded method.
+        /// </summary>
+        /// <param name="x">The simple parameter.</param>
+        /// <param name="y">Another simple parameter.</param>
+        /// <returns>The sum of both parameters.</returns>
+        public int OverloadedMethod(int x, int y) { return x + y; }
+
+        /// <summary>
+        /// This variation of the overloaded method can only distinguished
+        /// by parameter type from <see cref="OverloadedMethod(int, int)"/>.
+        /// </summary>
+        /// <param name="x">A simple parameter with a different type.</param>
+        /// <param name="y">The second simple parameter.</param>
+        /// <returns>The value of <paramref name="y"/>.</returns>
+        public int OverloadedMethod(string x, int y) { return y; }
+
+        /// <summary>
+        /// This overloaded method uses varargs.
+        /// </summary>
+        /// <param name="x">The simple parameter.</param>
+        /// <param name="y">Another simple parameter.</param>
+        /// <param name="zs">Additional parameter.</param>
+        /// <returns>The sum of <paramref name="x"/> and <paramref name="y"/>.</returns>
+        public int OverloadedMethod(int x, int y, params int[] zs)
+        {
+            return x + y;
+        }
+
+        /// <summary>
         /// An item accessor.
         /// </summary>
         /// <param name="a">A number between 1 and 10.</param>
@@ -110,6 +185,40 @@ namespace Nested.Namespace
         /// Is thrown if the number is smaller than 1 or larger than 10.
         /// </exception>
         public int this[int a] { get { return a; } }
+
+        /// <summary>
+        /// This operator adds an integer value to a <see cref="SimpleType"/> and returns a new
+        /// <see cref="SimpleType"/>.
+        /// </summary>
+        /// <param name="v">The simple type object.</param>
+        /// <param name="a">The numeric value to add.</param>
+        /// <returns>A new <see cref="SimpleType"/>.</returns>
+        public static SimpleType operator +(SimpleType v, int a)
+        {
+            return new SimpleType();
+        }
+
+        /// <summary>
+        /// Converts this <see cref="SimpleType"/> per explicit
+        /// cast into an <see cref="Int32"/>.
+        /// </summary>
+        /// <param name="v">The simple type instance.</param>
+        /// <returns><c>0</c></returns>.
+        public static explicit operator int(SimpleType v)
+        {
+            return 0;
+        }
+
+        /// <summary>
+        /// Converts this <see cref="SimpleType"/> per implicit
+        /// cast into a <see cref="String"/>.
+        /// </summary>
+        /// <param name="v">The simple type sinstance.</param>
+        /// <returns>The empty string.</returns>
+        public static implicit operator string(SimpleType v)
+        {
+            return string.Empty;
+        }
 
         /// <summary>
         /// Destructor of the class.
