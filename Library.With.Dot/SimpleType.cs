@@ -42,6 +42,7 @@ namespace Nested.Namespace
     /// </para>
     /// <para>
     /// Some interesting types and methods:
+    /// <see cref="Library.With.Dot"/>,<br/>
     /// <see cref="SimpleType.ProtectedMethod"/>,<br/>
     /// <see cref="SimpleType.OverloadedMethod(string, int)"/>,<br/>
     /// <see cref="Library.With.Dot.DemoDelegate"/>,<br/>
