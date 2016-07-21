@@ -5,31 +5,55 @@
             xmlns:cf="urn:CRefFormatting">
 
   <template match="text()">
+    <variable name="beginning" select="substring(., 1, 1)" />
+    <if test='$beginning=" "'>
+      <text> </text>
+    </if>
+    <if test='$beginning="\r" or $beginning="\n"'>
+      <text>
+</text>
+    </if>
     <value-of select="normalize-space(.)"/>
+    <if test="string-length(.) &gt; 1">
+      <variable name="ending" select="substring(., string-length(.))"/>
+      <if test='$ending=" "'>
+        <text> </text>
+      </if>
+      <if test='$ending="\n" or $ending="\r"'>
+        <text>
+</text>
+      </if>
+    </if>
   </template>
 
   <template match="c">
-    <text> `</text>
+    <text>`</text>
     <value-of select="."/>
-    <text>` </text>
+    <text>`</text>
   </template>
 
   <template match="strong|b">
-    <text> **</text>
+    <text>**</text>
     <value-of select="."/>
-    <text>** </text>
+    <text>**</text>
   </template>
 
   <template match="em|i">
-    <text> _</text>
+    <text>_</text>
     <value-of select="."/>
-    <text>_ </text>
+    <text>_</text>
   </template>
 
   <template match="para">
     <apply-templates />
     <text>
 
+</text>
+  </template>
+
+  <template match="br">
+    <text>  </text>
+    <text>
 </text>
   </template>
 
@@ -111,14 +135,17 @@
   <template match="see">
     <text> [`</text>
     <value-of select="cf:Label(@cref)"/>
-    <text>`](#)
-</text>
+    <text>`](</text>
+    <value-of select="'#'"/>
+    <text>)</text>
   </template>
 
   <template match="seealso">
     <text>* [</text>
     <value-of select="cf:FullLabel(@cref)"/>
-    <text>](#)
+    <text>`](</text>
+    <value-of select="'#'"/>
+    <text>)
 </text>
   </template>
 
@@ -159,13 +186,13 @@
   <template match="paramref">
     <text> `</text>
     <value-of select="@name"/>
-    <text>` </text>
+    <text>`</text>
   </template>
 
   <template match="typeparamref">
     <text> `</text>
     <value-of select="@name"/>
-    <text>` </text>
+    <text>`</text>
   </template>
 
   <template match="summary|remarks">
