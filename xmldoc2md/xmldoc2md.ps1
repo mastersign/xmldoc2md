@@ -193,11 +193,11 @@ foreach ($t in $types)
     $out = [IO.File]::Open("$TargetPath\$tFile", [IO.FileMode]::Create, [IO.FileAccess]::Write)
     $writer = new System.IO.StreamWriter($out, (new System.Text.UTF8Encoding ($false)))
 
-	$writer.WriteLine("<!--")
-	$writer.WriteLine("Type: $($t.FullName)")
-	$writer.WriteLine("FileName: $tFile")
-	$writer.WriteLine("CRef: $tCRef")
-	$writer.WriteLine("-->")
+	#$writer.WriteLine("<!--")
+	#$writer.WriteLine("Type: $($t.FullName)")
+	#$writer.WriteLine("FileName: $tFile")
+	#$writer.WriteLine("CRef: $tCRef")
+	#$writer.WriteLine("-->")
 	$writer.WriteLine()
 
 	$typeVariation = type-variation $t
