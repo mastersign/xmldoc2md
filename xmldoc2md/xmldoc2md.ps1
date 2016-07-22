@@ -226,12 +226,15 @@ foreach ($t in $types)
 		$writer.WriteLine()
 	}
 
-	$writer.WriteLine("## Overview")
-	write-indexblock $writer $ctorNodes "Constructors"
-	write-indexblock $writer $fieldNodes "Fields"
-	write-indexblock $writer $eventNodes "Events"
-	write-indexblock $writer $propertyNodes "Properties"
-	write-indexblock $writer $methodNodes "Methods"
+	if ($ctorNodes -or $fieldNodes -or $eventNodes -or $propertyNodes -or $methodNodes)
+	{
+		$writer.WriteLine("## Overview")
+		write-indexblock $writer $ctorNodes "Constructors"
+		write-indexblock $writer $fieldNodes "Fields"
+		write-indexblock $writer $eventNodes "Events"
+		write-indexblock $writer $propertyNodes "Properties"
+		write-indexblock $writer $methodNodes "Methods"
+	}
 
 	write-memberblock $writer $ctorNodes "Constructors" "ctors"
 	write-memberblock $writer $fieldNodes "Fields" "fields"
