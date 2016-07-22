@@ -59,7 +59,10 @@
 
   <template match="code">
     <text>
-```
+
+```</text>
+    <value-of select="@lang"/>
+    <text>
 </text>
     <value-of select="cf:RemoveIndentation(text())" />
     <text>

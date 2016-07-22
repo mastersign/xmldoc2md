@@ -57,7 +57,7 @@ namespace Nested.Namespace
     /// </summary>
     /// <example>
     /// This example shows the instantiation of <see cref="SimpleType"/>.
-    /// <code>
+    /// <code lang="csharp">
     /// // Instantiation
     /// SimpleType st = new SimpleType(10, "ten");
     /// // Usage
