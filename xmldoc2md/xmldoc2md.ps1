@@ -187,7 +187,7 @@ foreach ($t in $types)
 	$tCRef = $crefFormatting.CRef($t)
 	$tParseResult = parse-cref $tCRef
 
-	Write-Host "  - $($t.FullName)"
+	Write-Host "  -> $tFile"
     $typeNode = type-member $tCRefName
 
     $out = [IO.File]::Open("$TargetPath\$tFile", [IO.FileMode]::Create, [IO.FileAccess]::Write)
