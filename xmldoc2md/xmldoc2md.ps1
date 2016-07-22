@@ -2,8 +2,8 @@ param (
 	[array]$Assemblies,
 	[string]$TargetPath,
 	[string]$FileNameExtension = ".md",
-	[string]$UrlBase = "/bench/ref/clr-api/",
-	[string]$UrlFileNameExtension = "/"
+	[string]$UrlBase = "",
+	[string]$UrlFileNameExtension = ".md"
 )
 
 if (!(Test-Path $TargetPath)) { mkdir $TargetPath | Out-Null }
