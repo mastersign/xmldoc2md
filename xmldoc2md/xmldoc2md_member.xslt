@@ -10,7 +10,9 @@
   <template match="member">
     <text>### </text>
     <value-of select="cf:EscapeMarkdown(cf:Label(@name))"/>
-    <text>
+    <text> {#</text>
+    <value-of select="cf:Anchor(@name)"/>
+    <text>}
 </text>
     <apply-templates select="summary" />
     <if test="typeparam">

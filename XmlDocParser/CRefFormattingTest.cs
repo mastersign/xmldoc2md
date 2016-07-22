@@ -28,5 +28,16 @@ namespace Mastersign.XmlDoc
             Assert.AreEqual("A.B.x()", f.FullLabel("M:A.B.x"));
             Assert.AreEqual("A.B.x<?, ?>(System.Int32, A.B)", f.FullLabel("M:A.B.x`2(System.Int32,A.B)"));
         }
+
+        [Test]
+        public void UrlTest()
+        {
+            var f = new CRefFormatting();
+            f.UrlBase = "BASE/";
+            f.UrlFileNameExtension = ".ext";
+
+            Assert.AreEqual("BASE/ns_Abc.Def.ext", f.Url("N:Abc.Def"));
+            Assert.AreEqual("BASE/Ab.Cd.ext#Method1", f.Url("M:Ab.Cd`1.Method1(`0)"));
+        }
     }
 }

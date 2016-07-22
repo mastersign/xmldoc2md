@@ -135,15 +135,15 @@
     <text> [`</text>
     <value-of select="cf:Label(@cref)"/>
     <text>`](</text>
-    <value-of select="'#'"/>
+    <value-of select="cf:Url(@cref)"/>
     <text>)</text>
   </template>
 
   <template match="seealso">
     <text>* [</text>
-    <value-of select="cf:FullLabel(@cref)"/>
-    <text>`](</text>
-    <value-of select="'#'"/>
+    <value-of select="cf:EscapeMarkdown(cf:FullLabel(@cref))"/>
+    <text>](</text>
+    <value-of select="cf:Url(@cref)"/>
     <text>)
 </text>
   </template>
@@ -174,7 +174,7 @@
     <text>* [**</text>
     <value-of select="cf:EscapeMarkdown(cf:Label(@cref))"/>
     <text>**](</text>
-    <value-of select="'#'"/>
+    <value-of select="cf:Url(@cref)"/>
     <text>)  </text>
     <text>
   </text>
@@ -182,7 +182,6 @@
     <text>
 </text>
   </template>
-
 
   <template match="paramref">
     <text> `</text>

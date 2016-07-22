@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
@@ -355,6 +356,8 @@ namespace Mastersign.XmlDoc
 
         private static Regex MethodTypeParamRefPattern = new Regex(@"^``(?<no>\d+)$");
 
+        private const int HASH_LENGTH = 4; // Bytes
+
         public CRefFormatting()
         {
             FileNameExtension = ".md";
@@ -368,11 +371,214 @@ namespace Mastersign.XmlDoc
 
         public string UrlFileNameExtension { get; set; }
 
+        private CRefParsingResult CurrentCRef { get; set; }
+
+        private HashAlgorithm md5 = MD5.Create();
+
+        public string CurrentContextCRef
+        {
+            get { return CurrentCRef.Source; }
+            set { CurrentCRef = CRefParsing.Parse(value); }
+        }
+
         public Assembly[] Assemblies { get; set; }
 
-        public XmlDocument[] XmlDocs { get; set; }
+        private XmlDocument[] xmlDocs;
+
+        public XmlDocument[] XmlDocs
+        {
+            get { return xmlDocs; }
+            set
+            {
+                xmlDocs = value;
+                CountRawUrls();
+            }
+        }
+
+        private readonly Dictionary<string, int> fileUrlCounts = new Dictionary<string, int>();
+        private readonly Dictionary<string, int> fullUrlCounts = new Dictionary<string, int>();
 
         private delegate bool ElementCriteria(XmlElement node);
+
+        private void CountRawUrls()
+        {
+            fullUrlCounts.Clear();
+            if (XmlDocs == null) return;
+            foreach (var xmlDoc in XmlDocs)
+            {
+                var memberEls = xmlDoc.SelectNodes("/doc/members/member");
+                foreach (XmlElement mEl in memberEls)
+                {
+                    var cref = mEl.GetAttribute("name");
+                    var parsed = CRefParsing.Parse(cref);
+                    if (parsed.Kind == CRefKind.Type)
+                    {
+                        var normalizedFilePart = NormalizeForUrl(UrlFilePart(parsed));
+                        int fileCnt;
+                        if (fileUrlCounts.TryGetValue(normalizedFilePart, out fileCnt))
+                        {
+                            fileUrlCounts[normalizedFilePart] = fileCnt + 1;
+                        }
+                        else
+                        {
+                            fileUrlCounts[normalizedFilePart] = 1;
+                        }
+                    }
+                }
+                memberEls = xmlDoc.SelectNodes("/doc/members/member");
+                foreach (XmlElement mEl in memberEls)
+                {
+                    var cref = mEl.GetAttribute("name");
+                    var parsed = CRefParsing.Parse(cref);
+                    if (parsed.Kind != CRefKind.Type)
+                    {
+                        var normalizedUrl = NormalizeForUrl(
+                            CombineFileAndAnchor(UrlFilePartUnique(parsed), UrlAnchorPart(parsed)));
+                        int fullCnt;
+                        if (fullUrlCounts.TryGetValue(normalizedUrl, out fullCnt))
+                        {
+                            fullUrlCounts[normalizedUrl] = fullCnt + 1;
+                        }
+                        else
+                        {
+                            fullUrlCounts[normalizedUrl] = 1;
+                        }
+                    }
+                }
+            }
+        }
+
+        private string Hashed(string value)
+        {
+            var hash = md5.ComputeHash(Encoding.Unicode.GetBytes(value));
+            var sb = new StringBuilder();
+            for (int i = 0; i < Math.Min(hash.Length, HASH_LENGTH); i++)
+            {
+                sb.Append(hash[i].ToString("X2"));
+            }
+            return sb.ToString();
+        }
+
+        private string NormalizeForUrl(string name)
+        {
+            if (name == null) return null;
+            var result = name;
+            result = result.Replace('#', '_');
+            result = GenericMethodPattern.Replace(result, "");
+            result = GenericTypePattern.Replace(result, "");
+            return result;
+        }
+
+        private string UrlAnchorPart(CRefParsingResult parsed)
+        {
+            if (parsed.Kind == CRefKind.Field ||
+                parsed.Kind == CRefKind.Event ||
+                parsed.Kind == CRefKind.Property ||
+                parsed.Kind == CRefKind.Method)
+            {
+                var member = (CRefMember)parsed;
+                return member.MemberName;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        private string UrlFilePart(CRefParsingResult parsed)
+        {
+            if (parsed.Kind == CRefKind.Namespace)
+            {
+                var ns = (CRefNamespace)parsed;
+                return "ns_" + ns.Namespace;
+            }
+            else if (parsed is CRefType)
+            {
+                var type = (CRefType)parsed;
+                return type.FullTypeName;
+            }
+            else
+            {
+                return Hashed(parsed.Source);
+            }
+        }
+
+        private bool IsManifoldFile(CRefParsingResult cref)
+        {
+            var normalizedUrlFilePart = NormalizeForUrl(UrlFilePart(cref));
+            int cnt;
+            return fileUrlCounts.TryGetValue(normalizedUrlFilePart, out cnt)
+                ? cnt > 1
+                : false;
+        }
+
+        private string UrlFilePartUnique(CRefParsingResult parsed)
+        {
+            var urlFilePart = UrlFilePart(parsed);
+            return IsManifoldFile(parsed)
+                ? urlFilePart + "_" + Hashed(urlFilePart)
+                : urlFilePart;
+        }
+
+        private string CombineFileAndAnchor(string filePart, string anchorPart)
+        {
+            return anchorPart != null
+                ? filePart + "#" + anchorPart
+                : filePart;
+        }
+
+        private bool IsManifoldUrl(CRefParsingResult cref)
+        {
+            var normalizedUrl = NormalizeForUrl(
+                CombineFileAndAnchor(UrlFilePartUnique(cref), UrlAnchorPart(cref)));
+            int cnt;
+            return fullUrlCounts.TryGetValue(normalizedUrl, out cnt)
+                ? cnt > 1
+                : false;
+        }
+
+        private string UrlAnchorPartUnique(CRefParsingResult parsed)
+        {
+            var anchorPart = UrlAnchorPart(parsed);
+            if (anchorPart == null) return null;
+            return IsManifoldUrl(parsed)
+                ? anchorPart + "_" + Hashed(parsed.Source)
+                : anchorPart;
+        }
+
+        public string Anchor(string cref)
+        {
+            return NormalizeForUrl(UrlAnchorPartUnique(CRefParsing.Parse(cref)));
+        }
+
+        public string Url(string cref)
+        {
+            var parsed = CRefParsing.Parse(cref);
+            return UrlBase + CombineFileAndAnchor(
+                NormalizeForUrl(UrlFilePartUnique(parsed)) + UrlFileNameExtension,
+                NormalizeForUrl(UrlAnchorPartUnique(parsed)));
+        }
+
+        public string CRefTypeName(Type t)
+        {
+            return t.FullName.Replace('+', '.');
+        }
+
+        public string CRef(Type t)
+        {
+            return "T:" + CRefTypeName(t);
+        }
+
+        public string FileName(string cref)
+        {
+            return NormalizeForUrl(UrlFilePartUnique(CRefParsing.Parse(cref)))
+                + FileNameExtension;
+        }
+
+        public string FileName(Type t)
+        {
+            return FileName(CRef(t));
+        }
 
         private XmlElement FindFirstElement(string xpath, ElementCriteria criteria)
         {
@@ -646,45 +852,11 @@ namespace Mastersign.XmlDoc
             }
         }
 
-        public string CRefTypeName(Type t)
-        {
-            return t.FullName.Replace('+', '.');
-        }
-
-        public string CRef(Type t)
-        {
-            return "T:" + CRefTypeName(t);
-        }
-
-        public string FileName(Type t)
-        {
-            return CRefTypeName(t) + FileNameExtension;
-        }
-
-        public string FileName(string cref)
-        {
-            var result = CRefParsing.Parse(cref);
-
-            if (result.Kind == CRefKind.Namespace)
-            {
-                var ns = (CRefNamespace)result;
-                return ns.Namespace + FileNameExtension;
-            }
-            var type = result as CRefType;
-            if (type != null)
-            {
-                return type.Namespace != null
-                    ? type.Namespace + "." + type.TypeName + FileNameExtension
-                    : type.TypeName + FileNameExtension;
-            }
-            return null;
-        }
-
         public string RemoveIndentation(string text)
         {
             var lines = text.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
             var minIndentation = text.Length;
-            foreach(var l in lines)
+            foreach (var l in lines)
             {
                 if (l.Trim().Length == 0) continue;
                 var trimmedLine = l.TrimStart();

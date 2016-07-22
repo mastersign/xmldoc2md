@@ -1,6 +1,9 @@
 param (
 	[array]$Assemblies,
-	[string]$TargetPath
+	[string]$TargetPath,
+	[string]$FileNameExtension = ".md",
+	[string]$UrlBase = "/bench/ref/clr-api/",
+	[string]$UrlFileNameExtension = "/"
 )
 
 if (!(Test-Path $TargetPath)) { mkdir $TargetPath | Out-Null }
@@ -42,6 +45,9 @@ catch
 }
 $crefParsing = new Mastersign.XmlDoc.CRefParsing
 $crefFormatting = new Mastersign.XmlDoc.CRefFormatting
+$crefFormatting.FileNameExtension = $FileNameExtension
+$crefFormatting.UrlBase = $UrlBase
+$crefFormatting.UrlFileNameExtension = $UrlFileNameExtension
 
 $typeStyleFile = Resolve-Path "$myDir\xmldoc2md_type.xslt"
 $memberStyleFile = Resolve-Path "$myDir\xmldoc2md_member.xslt"
@@ -136,6 +142,21 @@ function transform($writer, $style, [System.Xml.XmlElement]$e)
     $sr.Close()
 }
 
+function write-indexblock($writer, $nodes, $title)
+{
+	if (!$nodes) { return }
+	$writer.WriteLine("**$title**")
+	$writer.WriteLine()
+	foreach ($n in $nodes)
+	{
+		$cref = $n.name
+		$label = $crefFormatting.EscapeMarkdown($crefFormatting.Label($cref))
+		$anchor = $crefFormatting.Anchor($cref)
+		$writer.WriteLine("* [$label](#$anchor)")
+	}
+	$writer.WriteLine()
+}
+
 function write-memberblock($writer, $nodes, $title, $ref)
 {
 	if (!$nodes) { return }
@@ -204,6 +225,13 @@ foreach ($t in $types)
 		transform $writer $typeStyle $typeNode
 		$writer.WriteLine()
 	}
+
+	$writer.WriteLine("## Overview")
+	write-indexblock $writer $ctorNodes "Constructors"
+	write-indexblock $writer $fieldNodes "Fields"
+	write-indexblock $writer $eventNodes "Events"
+	write-indexblock $writer $propertyNodes "Properties"
+	write-indexblock $writer $methodNodes "Methods"
 
 	write-memberblock $writer $ctorNodes "Constructors" "ctors"
 	write-memberblock $writer $fieldNodes "Fields" "fields"
