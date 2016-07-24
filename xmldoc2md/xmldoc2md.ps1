@@ -1,6 +1,103 @@
+<#
+.SYNOPSIS
+
+Convert .NET XML documentation into Markdown.
+
+.PARAMETER Assemblies
+
+Type: [array]
+
+A list of absolute ar relative paths, pointing to the .NET assemblies
+(*.dll, *.exe) which will be included in the documentation.
+
+.PARAMETER TargetPath
+
+Type: [string]
+
+A path to the directory where the Markdown files will be stored.
+If the specified directory does not exist, it is created.
+
+.PARAMETER FileNameExtension
+
+Type: [string] (optional)
+Default Value: ".md"
+
+This file name extension is used for the generated Markdown files.
+
+.PARAMETER UrlBase
+
+Type: [string] (optional)
+Default Value: ""
+
+The URL base is used as a prefix for all links in the generated Markdown files.
+
+.PARAMETER UrlFileNameExtension
+
+Type: [string] (optional)
+Default Value: ".md"
+
+This file name extension is used in the URLs of cross file links,
+(e.g. if one type references another type via a see or seealso XML doc tag).
+
+.DESCRIPTION
+
+xmldoc2md aims to be a light-weight converter from XML doc files (and their 
+assemblies) to Markdown files.
+
+If you use the /doc switch with a .NET compiler, e.g. by activating the XML
+documentation generation in the project properties inside of Visual Studio,
+the compiler will generate an XML file along with your assembly.
+This XML doc file contains the content of your XML comments on various
+code blocks (classes, properties, methods, ...).
+
+But the XML doc file itself is not very helpful and needs further processing
+to provide an easy-to-browse documentation.
+Actually, to build meaningfulf documentation, the compiled assembly is needed
+as well, because a lot of information about the types and type members is not
+included in the XML doc file.
+
+xmldoc2md generates one Markdown file for every namespace and every public type
+in the given assemblies.
+
+.EXAMPLE
+
+To generate the Markdown formatted documentation for one Assembly
+
+.NOTES
+
+You can use tools like the Sandacstle Help File Builder or Doxygen to generate
+a static HTML website or a compiled HTML (*.chm) file, but these tools are kind
+of heavy and do not support output in Markdown format.
+
+https://github.com/EWSoftware/SHFB
+http://www.stack.nl/~dimitri/doxygen/
+
+The Markdown format is a light-weight text markup syntax and is widely used
+and supported in a lot of modern software development and collaboration tools.
+
+https://daringfireball.net/projects/markdown/
+
+xmldoc2md works with a combination of code in different languages:
+
+* The overall transformation process is controlled by this PowerShell script.
+* A C# code file defining a couple of classes with parsing algorithms
+  for cref-style member references, and formatting functions.
+* A number of XSLT files for rendering the XML doc files as Markdown.
+
+The PowerShell script compiles the C# file at runtime by calling the Add-Type
+commandlet. The XSLT files are used through the .NET class 
+System.Xml.Xsl.XsltCompiledTransformation. The types of the runtime compiled
+C# files are passed to the XsltCompiledTransformation via an XsltArgumentList
+as extension objects. This way, the XSLT files have access to the C# defined
+functions.
+By using more than one call to the XSL transformations to generate one output
+file, the PowerShell script has fine control over the content of the generated
+Markdown files.
+#>
+
 param (
-	[array]$Assemblies,
-	[string]$TargetPath,
+	[array]$Assemblies = $(throw "You need to specifiy at least one assembly (*.dll, *.exe) to document."),
+	[string]$TargetPath = $(throw "You need to provide a target directory."),
 	[string]$FileNameExtension = ".md",
 	[string]$UrlBase = "",
 	[string]$UrlFileNameExtension = ".md"
