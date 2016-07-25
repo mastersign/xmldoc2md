@@ -463,9 +463,12 @@ namespace Mastersign.XmlDoc
         {
             if (name == null) return null;
             var result = name;
-            result = result.Replace('#', '_');
+            result = result.Replace("#", "");
+            result = result.Replace('.', '-');
+            result = result.Replace('_', '-');
             result = GenericMethodPattern.Replace(result, "");
             result = GenericTypePattern.Replace(result, "");
+            result = result.ToLowerInvariant();
             return result;
         }
 
