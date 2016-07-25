@@ -133,9 +133,11 @@ https://daringfireball.net/projects/markdown/
 [CmdletBinding()]
 Param (
     [Parameter(Position=0, Mandatory=$True)]
+	[ValidateNotNullOrEmpty()]
 	[string]$TargetPath,
 
     [Parameter(Position=1, Mandatory=$True, ValueFromPipeline=$True)]
+	[ValidateNotNullOrEmpty()]
 	[string[]]$Assemblies,
 
 	[string]$FileNameExtension = ".md",
