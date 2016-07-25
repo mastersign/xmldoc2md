@@ -143,6 +143,9 @@ Param (
 	[string]$UrlBase = "",
 
 	[string]$UrlFileNameExtension = ".md"
+	[ValidateRange(-1,1)]
+	[int]$HeadlineOffset = 0,
+
 )
 
 if (!(Test-Path $TargetPath)) { mkdir $TargetPath | Out-Null }
@@ -220,6 +223,7 @@ foreach ($p in $assemblyPaths)
 $crefFormatting.Assemblies = $assemblyRefs;
 $crefFormatting.XmlDocs = $xmlDocs;
 
+$headlinePrefix = "#" * ($HeadlineOffset + 1)
 function parse-cref($cref)
 {
     return [Mastersign.XmlDoc.CRefParsing]::Parse($cref)
@@ -267,6 +271,7 @@ function transform($writer, $style, [System.Xml.XmlElement]$e)
     $sr = new System.IO.StringReader ("<partial>" + [string]$e.OuterXml + "</partial>")
     $xr = [System.Xml.XmlReader]::Create($sr)
     $xmlArgs = new System.Xml.Xsl.XsltArgumentList
+	$xmlArgs.AddParam("headlinePrefix", "", $headlinePrefix)
 	$xmlArgs.AddExtensionObject("urn:CRefParsing", $crefParsing)
 	$xmlArgs.AddExtensionObject("urn:CRefFormatting", $crefFormatting)
     try
@@ -299,7 +304,7 @@ function write-indexblock($writer, $nodes, $title)
 function write-memberblock($writer, $nodes, $title, $ref)
 {
 	if (!$nodes) { return }
-	$writer.WriteLine("## $title {#$ref}")
+	$writer.WriteLine("${headlinePrefix}## $title {#$ref}")
 	$writer.WriteLine()
     foreach ($n in $nodes)
     {
@@ -331,7 +336,7 @@ foreach ($ns in $namespaces)
     $writer = new System.IO.StreamWriter($out, (new System.Text.UTF8Encoding ($false)))
 
     $writer.WriteLine()
-    $writer.WriteLine("# $($crefFormatting.EscapeMarkdown($nsLabel)) Namespace")
+    $writer.WriteLine("${headlinePrefix}# $($crefFormatting.EscapeMarkdown($nsLabel)) Namespace")
     $writer.WriteLine()
 
     foreach ($t in $types)

@@ -4,6 +4,7 @@
             xmlns:cp="urn:CRefParsing"
             xmlns:cf="urn:CRefFormatting">
 
+  <param name="headlinePrefix" />
   <include href="xmldoc2md.xslt"/>
 
   <output encoding="utf-8" method="text" omit-xml-declaration="yes" standalone="yes" />
@@ -16,6 +17,7 @@
       <apply-templates select="typeparam" />
     </if>
     <if test="param">
+      <value-of select="$headlinePrefix"/>
       <text>## Parameter
 
 </text>
@@ -24,6 +26,7 @@
 </text>
     </if>
     <if test="returns">
+      <value-of select="$headlinePrefix"/>
       <text>## Return Value
 </text>
       <apply-templates select="returns" />
@@ -31,12 +34,14 @@
 </text>
     </if>
     <if test="remarks">
+      <value-of select="$headlinePrefix"/>
       <text>## Remarks
 </text>
       <apply-templates select="remarks" />
     </if>
     <apply-templates select="example" />
     <if test="seealso">
+      <value-of select="$headlinePrefix"/>
       <text>## See Also
 
 </text>
@@ -48,6 +53,7 @@
   </template>
 
   <template match="example">
+    <value-of select="$headlinePrefix"/>
     <text>## Example
 </text>
     <apply-templates />
