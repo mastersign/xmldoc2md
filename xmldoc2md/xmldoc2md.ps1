@@ -3,38 +3,27 @@
 
 Convert .NET XML documentation into Markdown.
 
-.PARAMETER Assemblies
-
-Type: [array]
-
-A list of absolute ar relative paths, pointing to the .NET assemblies
-(*.dll, *.exe) which will be included in the documentation.
-
 .PARAMETER TargetPath
-
-Type: [string]
 
 A path to the directory where the Markdown files will be stored.
 If the specified directory does not exist, it is created.
 
-.PARAMETER FileNameExtension
+.PARAMETER Assemblies
 
-Type: [string] (optional)
-Default Value: ".md"
+A list of absolute ar relative paths, pointing to the .NET assemblies
+(*.dll, *.exe) which will be included in the documentation.
+A path can contain wildcards, which will be expanded before processing
+the assemblies.
+
+.PARAMETER FileNameExtension
 
 This file name extension is used for the generated Markdown files.
 
 .PARAMETER UrlBase
 
-Type: [string] (optional)
-Default Value: ""
-
 The URL base is used as a prefix for all links in the generated Markdown files.
 
 .PARAMETER UrlFileNameExtension
-
-Type: [string] (optional)
-Default Value: ".md"
 
 This file name extension is used in the URLs of cross file links,
 (e.g. if one type references another type via a see or seealso XML doc tag).
@@ -56,12 +45,52 @@ Actually, to build meaningfulf documentation, the compiled assembly is needed
 as well, because a lot of information about the types and type members is not
 included in the XML doc file.
 
+To generate a documentation for a number of assemblies, you can call
+xmldoc2md, specifying the output directory for the Markdown files and the 
+paths to the assemblies. xmldoc2md expects to find the XML doc files beside
+their corresponding assembly.
+
 xmldoc2md generates one Markdown file for every namespace and every public type
 in the given assemblies.
 
 .EXAMPLE
 
-To generate the Markdown formatted documentation for one Assembly
+To generate the Markdown formatted documentation for one assembly use:
+
+> xmldoc2md "path\to\docs\md" "path\to\my.assembly.dll"
+
+... or with named parameters and explicit array of assembly paths:
+
+> xmldoc2md -TargetPath "path\to\target-directory" `
+            -Assemblies @("path\to\my.assembly.dll")
+
+To pass multiple assemblies you can put them into an array:
+
+> xmldoc2md "path\to\docs\md" @("bin\assembly1.dll", "bin\assembly2.exe")
+
+... or pipe the assembly paths into xmldoc2md:
+
+> gci *.dll | xmldoc2md "path\to\docs\md"
+
+You can use wildcards in the assembly paths:
+
+> xmldoc2md "path\to\docs\md" @("project\bin\*.dll", "project\bin\*.exe")
+
+If you need the generated files to have another filename extension than *.md,
+you can use the FileNameExtension parameter:
+
+> xmldoc2md "path\to\docs\md" "bin\*.dll" -FileNameExtension "*.markdown"
+
+To specify the base path for the URLs in generated links, use the UrlBase
+parameter:
+
+> xmldoc2md "path\to\docs\md" "bin\*.dll" -UrlBase "http://my-domain.com/docs/"
+
+If you will transform the Markdown files into another format, changing the
+filename extension of the doc files in that process, you can specify the final
+filename extension to be used in the URLs of generated links:
+
+> xmldoc2md "path\to\docs\md" "bin\*.dll" -UrlFileNameExtension ".htm"
 
 .NOTES
 
@@ -85,21 +114,34 @@ xmldoc2md works with a combination of code in different languages:
 * A number of XSLT files for rendering the XML doc files as Markdown.
 
 The PowerShell script compiles the C# file at runtime by calling the Add-Type
-commandlet. The XSLT files are used through the .NET class 
+cmdlet. The XSLT files are used through the .NET class 
 System.Xml.Xsl.XsltCompiledTransformation. The types of the runtime compiled
 C# files are passed to the XsltCompiledTransformation via an XsltArgumentList
 as extension objects. This way, the XSLT files have access to the C# defined
 functions.
-By using more than one call to the XSL transformations to generate one output
+By using more than one call to the XSL transformations, to generate one output
 file, the PowerShell script has fine control over the content of the generated
 Markdown files.
+
+.LINK
+https://github.com/mastersign/xmldoc2md
+
+.LINK
+https://daringfireball.net/projects/markdown/
 #>
 
-param (
-	[array]$Assemblies = $(throw "You need to specifiy at least one assembly (*.dll, *.exe) to document."),
-	[string]$TargetPath = $(throw "You need to provide a target directory."),
+[CmdletBinding()]
+Param (
+    [Parameter(Position=0, Mandatory=$True)]
+	[string]$TargetPath,
+
+    [Parameter(Position=1, Mandatory=$True, ValueFromPipeline=$True)]
+	[string[]]$Assemblies,
+
 	[string]$FileNameExtension = ".md",
+
 	[string]$UrlBase = "",
+
 	[string]$UrlFileNameExtension = ".md"
 )
 
