@@ -178,8 +178,7 @@
     <value-of select="cf:EscapeMarkdown(cf:Label(@cref))"/>
     <text>**](</text>
     <value-of select="cf:Url(@cref)"/>
-    <text>)  </text>
-    <text>
+    <text>)
   </text>
     <apply-templates />
     <text>
