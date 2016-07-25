@@ -1,7 +1,7 @@
 <#
 .SYNOPSIS
 
-Convert .NET XML documentation into Markdown.
+Convert XML documentation files from .NET assemblies into Markdown files.
 
 .PARAMETER TargetPath
 

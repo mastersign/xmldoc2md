@@ -1,7 +1,7 @@
 XML DOC to Markdown
 ===================
 
-> A tool to convert XML DOC files from .NET assemblies into Markdown files.
+> Convert XML documentation files from .NET assemblies into Markdown files.
 
 Author: [Tobias Kiertscher](http://www.mastersign.de/)
 
