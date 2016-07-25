@@ -144,10 +144,24 @@ Param (
 
 	[string]$UrlBase = "",
 
-	[string]$UrlFileNameExtension = ".md"
+	[string]$UrlFileNameExtension = ".md",
+
+	[string]$Title = "Untitled API",
+
+	[Parameter(Mandatory=$False)]
+	[string]$Author,
+
+	[Parameter(Mandatory=$False)]
+	[string]$Publisher,
+
+	[string]$Copyright = "Copyright &copy; $([DateTime]::Now.Year). All rights reserved.",
+
 	[ValidateRange(-1,1)]
 	[int]$HeadlineOffset = 0,
 
+	[switch]$NoTitleHeadline,
+
+	[switch]$Footer
 )
 
 if (!(Test-Path $TargetPath)) { mkdir $TargetPath | Out-Null }
@@ -226,6 +240,8 @@ $crefFormatting.Assemblies = $assemblyRefs;
 $crefFormatting.XmlDocs = $xmlDocs;
 
 $headlinePrefix = "#" * ($HeadlineOffset + 1)
+$printTitleHeadline = $headlinePrefix -and !$NoTitleHeadline
+
 function parse-cref($cref)
 {
     return [Mastersign.XmlDoc.CRefParsing]::Parse($cref)
@@ -338,6 +354,7 @@ foreach ($ns in $namespaces)
     $writer = new System.IO.StreamWriter($out, (new System.Text.UTF8Encoding ($false)))
 
     $writer.WriteLine()
+	if ($printTitleHeadline) { $writer.WriteLine("${headlinePrefix} $($crefFormatting.EscapeMarkdown($Title))") }
     $writer.WriteLine("${headlinePrefix}# $($crefFormatting.EscapeMarkdown($nsLabel)) Namespace")
     $writer.WriteLine()
 
@@ -351,7 +368,16 @@ foreach ($ns in $namespaces)
             $writer.WriteLine("* [$($crefFormatting.EscapeMarkdown($tLabel))]($tUrl)")
         }
     }
-    $writer.WriteLine()
+
+	if ($Footer)
+	{
+	    $writer.WriteLine()
+		$writer.WriteLine("----")
+		if ($Author) { $writer.WriteLine("Author: $Author  ") }
+		if ($Publisher) { $writer.WriteLine("Publisher: $Publisher  ")}
+		$writer.WriteLine("Generated: $([DateTime]::Now.ToString("yyyy-MM-dd"))  ")
+		if ($Copyright) { $writer.WriteLine("License: $Copyright  ") }
+	}
 
     $writer.Close()
     $out.Close()
@@ -362,7 +388,9 @@ foreach ($t in $types)
 	$tFile = $crefFormatting.FileName($t)
 	$tCRefName = $crefFormatting.CRefTypeName($t)
 	$tCRef = $crefFormatting.CRef($t)
+	$tLabel = $crefFormatting.Label($tCref)
 	$tParseResult = parse-cref $tCRef
+	$typeVariation = type-variation $t
 
 	Write-Host "  -> $tFile"
     $typeNode = type-member $tCRefName
@@ -376,9 +404,8 @@ foreach ($t in $types)
 	#$writer.WriteLine("CRef: $tCRef")
 	#$writer.WriteLine("-->")
 	$writer.WriteLine()
-
-	$typeVariation = type-variation $t
-	$writer.WriteLine("# $($crefFormatting.EscapeMarkdown($crefFormatting.Label($tCref))) $typeVariation")
+	if ($printTitleHeadline) { $writer.WriteLine("${headlinePrefix} $($crefFormatting.EscapeMarkdown($Title))") }
+	$writer.WriteLine("${headlinePrefix}# $($crefFormatting.EscapeMarkdown($tLabel)) $typeVariation")
 
 	if ($typeNode)
 	{
@@ -405,7 +432,7 @@ foreach ($t in $types)
 
 	if ($ctorNodes -or $fieldNodes -or $eventNodes -or $propertyNodes -or $methodNodes)
 	{
-		$writer.WriteLine("## Overview")
+		$writer.WriteLine("${headlinePrefix}## Overview")
 		write-indexblock $writer $ctorNodes "Constructors"
 		write-indexblock $writer $fieldNodes "Fields"
 		write-indexblock $writer $eventNodes "Events"
@@ -418,6 +445,16 @@ foreach ($t in $types)
 	write-memberblock $writer $eventNodes "Events" "events"
 	write-memberblock $writer $propertyNodes "Properties" "properties"
 	write-memberblock $writer $methodNodes "Methods" "methods"
+
+	if ($Footer)
+	{
+		$writer.WriteLine()
+		$writer.WriteLine("----")
+		if ($Author) { $writer.WriteLine("Author: $Author  ") }
+		if ($Publisher) { $writer.WriteLine("Publisher: $Publisher  ")}
+		$writer.WriteLine("Generated: $([DateTime]::Now.ToString("yyyy-MM-dd"))  ")
+		if ($Copyright) { $writer.WriteLine("License: $Copyright  ") }
+	}
 
     $writer.Close()
     $out.Close()
