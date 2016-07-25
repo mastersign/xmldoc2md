@@ -1,32 +1,53 @@
 <#
 .SYNOPSIS
-
 Convert XML documentation files from .NET assemblies into Markdown files.
 
 .PARAMETER TargetPath
-
 A path to the directory where the Markdown files will be stored.
 If the specified directory does not exist, it is created.
 
 .PARAMETER Assemblies
-
 A list of absolute ar relative paths, pointing to the .NET assemblies
 (*.dll, *.exe) which will be included in the documentation.
 A path can contain wildcards, which will be expanded before processing
 the assemblies.
 
 .PARAMETER FileNameExtension
-
 This file name extension is used for the generated Markdown files.
 
 .PARAMETER UrlBase
-
 The URL base is used as a prefix for all links in the generated Markdown files.
 
 .PARAMETER UrlFileNameExtension
-
 This file name extension is used in the URLs of cross file links,
 (e.g. if one type references another type via a see or seealso XML doc tag).
+
+.PARAMETER Title
+The title for the whole API which is documented by the XML doc files.
+
+.PARAMETER Author
+The author of the documentation.
+
+.PARAMETER Publisher
+The publisher of the documentation.
+
+.PARAMETER Copyright
+A copyright notice to include in the optional footer and the meta-data header.
+
+.PARAMETER NoTitleHeadline
+Use this switch to suppress the title written as the main headline.
+
+.PARAMETER HeadlineOffset
+Provide -1 or 1 to adjust the headline levels.
+
+.PARAMETER Footer
+Use this switch to activate the generation of a footer with some metadata.
+
+.PARAMETER MetaDataStyle
+Provide one of three styles for the metadata header.
+- None: no header is written
+- Pandoc: An EPUB compatible YAML header is written
+- Hugo: A YAML header for static website generation is written
 
 .DESCRIPTION
 
@@ -128,6 +149,12 @@ https://github.com/mastersign/xmldoc2md
 
 .LINK
 https://daringfireball.net/projects/markdown/
+
+.LINK
+http://gohugo.io
+
+.LINK
+http://pandoc.org
 #>
 
 [CmdletBinding()]
@@ -148,9 +175,6 @@ Param (
 
 	[string]$Title = "Untitled API",
 
-	[ValidateSet("None", "Pandoc", "Hugo")]
-	[string]$MetaDataStyle = "None",
-
 	[Parameter(Mandatory=$False)]
 	[string]$Author,
 
@@ -164,7 +188,10 @@ Param (
 
 	[switch]$NoTitleHeadline,
 
-	[switch]$Footer
+	[switch]$Footer,
+
+	[ValidateSet("None", "Pandoc", "Hugo")]
+	[string]$MetaDataStyle = "None"
 )
 
 if (!(Test-Path $TargetPath)) { mkdir $TargetPath | Out-Null }

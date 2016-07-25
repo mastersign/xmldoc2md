@@ -40,12 +40,12 @@ NAME
 SYNOPSIS
     Convert XML documentation files from .NET assemblies into Markdown files.
 
-
 SYNTAX
     xmldoc2md.ps1 [-TargetPath] <String> [-Assemblies] <String[]>
     [-FileNameExtension <String>] [-UrlBase <String>] [-UrlFileNameExtension <String>]
-    [<CommonParameters>]
-
+	[-Title <String>] [-Author <String>] [-Publisher <String>] [-Copyright <String>]
+	[-HeadlineOffset <Int32>] [-NoTitleHeadline] [-Footer]
+    [-MetaDataStyle <String>] [<CommonParameters>]
 
 DESCRIPTION
     xmldoc2md aims to be a light-weight converter from XML doc files (and their
@@ -71,10 +71,11 @@ DESCRIPTION
     xmldoc2md generates one Markdown file for every namespace and every public type
     in the given assemblies.
 
-
 RELATED LINKS
     https://github.com/mastersign/xmldoc2md
     https://daringfireball.net/projects/markdown/
+    http://gohugo.io
+    http://pandoc.org
 
 REMARKS
     To see the examples, type: "Get-Help xmldoc2md.ps1 -examples".
