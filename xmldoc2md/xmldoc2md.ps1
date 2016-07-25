@@ -317,8 +317,39 @@ function type-variation([Type]$type)
 }
 
 [array]$types = public-types | sort { $_.FullName }
+[string[]]$namespaces = $types | % { $_.Namespace } | select -Unique | sort
 
-Write-Host "Types"
+Write-Host "Files:"
+foreach ($ns in $namespaces)
+{
+    $nsCRef = "N:$ns"
+    $nsFile = $crefFormatting.FileName($nsCRef)
+    $nsLabel = $crefFormatting.Label($nsCRef)
+    Write-Host "  -> $nsFile"
+
+    $out = [IO.File]::Open("$TargetPath\$nsFile", [IO.FileMode]::Create, [IO.FileAccess]::Write)
+    $writer = new System.IO.StreamWriter($out, (new System.Text.UTF8Encoding ($false)))
+
+    $writer.WriteLine()
+    $writer.WriteLine("# $($crefFormatting.EscapeMarkdown($nsLabel)) Namespace")
+    $writer.WriteLine()
+
+    foreach ($t in $types)
+    {
+        if ($t.Namespace -eq $ns)
+        {
+            $tCRef = $crefFormatting.CRef($t)
+            $tLabel = $crefFormatting.Label($tCRef)
+            $tUrl = $crefFormatting.Url($tCRef)
+            $writer.WriteLine("* [$($crefFormatting.EscapeMarkdown($tLabel))]($tUrl)")
+        }
+    }
+    $writer.WriteLine()
+
+    $writer.Close()
+    $out.Close()
+}
+
 foreach ($t in $types)
 {
 	$tFile = $crefFormatting.FileName($t)
