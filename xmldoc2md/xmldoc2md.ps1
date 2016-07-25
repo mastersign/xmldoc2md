@@ -372,32 +372,32 @@ function write-metadata()
 
 function write-pandoc-epub-header($writer, $label, $memberKind)
 {
-	$writer.WriteLine("...")
+	$writer.WriteLine("---")
 	$writer.WriteLine("title:")
 	$writer.WriteLine("- type: main")
-	$writer.WriteLine("  text: $Title")
+	$writer.WriteLine("  text: `"$Title`"")
 	$writer.WriteLine("- type: subtitle")
-	$writer.WriteLine("  text: $label")
+	$writer.WriteLine("  text: `"$label`"")
 	$writer.WriteLine("subject: $memberKind")
 	$writer.WriteLine("date: $([DateTime]::Now.ToString("yyyy-MM-dd"))")
-	if ($Author) { $writer.WriteLine("creator: $Author") }
-	if ($Publisher) { $writer.WriteLine("publisher: $Publisher") }
-	if ($Copyright) { $writer.WriteLine("rights: $Copyright") }
+	if ($Author) { $writer.WriteLine("creator: `"$Author`"") }
+	if ($Publisher) { $writer.WriteLine("publisher: `"$Publisher`"") }
+	if ($Copyright) { $writer.WriteLine("rights: `"$Copyright`"") }
 	$writer.WriteLine("...")
 }
 
 function write-hugo-front-matter($writer, $label, $memberKind)
 {
-	$writer.WriteLine("...")
-	$writer.WriteLine("title: $Title - $label")
+	$writer.WriteLine("---")
+	$writer.WriteLine("title: `"$Title - $label`"")
 	$writer.WriteLine("categeories:")
 	$writer.WriteLine("  - `".NET API`"")
 	$writer.WriteLine("  - `"$memberKind`"")
 	$writer.WriteLine("date: $([DateTime]::Now.ToString("yyyy-MM-dd"))")
-	if ($Author) { $writer.WriteLine("author: $Author") }
-	if ($Publisher) { $writer.WriteLine("publisher: $Publisher") }
-	if ($Copyright) { $writer.WriteLine("copyright: $Copyright") }
-	$writer.WriteLine("...")
+	if ($Author) { $writer.WriteLine("author: `"$Author`"") }
+	if ($Publisher) { $writer.WriteLine("publisher: `"$Publisher`"") }
+	if ($Copyright) { $writer.WriteLine("copyright: `"$Copyright`"") }
+	$writer.WriteLine("---")
 }
 
 function type-variation([Type]$type)
