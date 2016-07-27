@@ -282,7 +282,19 @@ function public-types()
 	foreach ($a in $assemblyRefs)
 	{
 		[System.Reflection.Assembly]$a = $a
-		$a.GetTypes() | ? { $_.IsPublic -or $_.IsNestedPublic }
+        try
+        {
+	    	$a.GetTypes() | ? { $_.IsPublic -or $_.IsNestedPublic }
+        }
+        catch
+        {
+            $ex = $_.Exception
+            Write-Warning $ex.Message
+            foreach ($lex in $ex.LoaderExceptions)
+            {
+                Write-Warning "- $($lex.Message)"
+            }
+        }
 	}
 }
 
