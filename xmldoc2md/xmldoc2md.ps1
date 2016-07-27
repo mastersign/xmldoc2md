@@ -247,10 +247,12 @@ $memberStyle.Load([string]$memberStyleFile)
 
 $assemblyRefs = @()
 $xmlDocs = @()
+
 foreach ($p in $assemblyPaths)
 {
-	try {
-		$assembly = [Reflection.Assembly]::ReflectionOnlyLoadFrom($p)
+	try
+    {
+		$assembly = [Reflection.Assembly]::LoadFrom($p)
 		$xmlDocFile = [IO.Path]::ChangeExtension($p, ".xml")
 		$xmlDoc = new System.Xml.XmlDocument
 		if (Test-Path $xmlDocFile)
