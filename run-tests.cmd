@@ -16,6 +16,10 @@ REM --- Restore NuGet Packages ---
 
 CALL "%NUGET%" restore
 
+REM --- Compile Solution ---
+
+CALL "%SystemRoot%\Microsoft.NET\Framework64\v4.0.30319\MSBuild.exe" "%~dp0\XmlDocToMarkdown.sln" /v:minimal /tv:14.0 /m /p:Configuration=Debug
+
 REM --- Run Tests ---
 
 CALL "%TEST_RUNNER%" "%~dp0\XmlDocParser\bin\Debug\XmlDocParser.dll"
