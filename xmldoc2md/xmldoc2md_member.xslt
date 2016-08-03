@@ -18,32 +18,34 @@
 </text>
     <apply-templates select="summary" />
     <if test="typeparam">
-      <value-of select="$headlinePrefix"/>
-      <text>#### Type Parameter
+      <text>Type Parameter
 
 </text>
       <apply-templates select="typeparam" />
     </if>
     <if test="value">
-      <value-of select="$headlinePrefix"/>
-      <text>#### Value
+      <text>Value
+
 </text>
       <apply-templates select="value" />
       <text>
 </text>
     </if>
     <if test="param">
-      <value-of select="$headlinePrefix"/>
-      <text>#### Parameter
+      <text>Parameter
 
 </text>
-      <apply-templates select="param" />
-      <text>
-</text>
+      <apply-templates select="param">
+        <with-param name="memberCref" select="@name" />
+      </apply-templates>
     </if>
     <if test="returns">
-      <value-of select="$headlinePrefix"/>
-      <text>#### Return Value
+      <text>Return Value  </text>
+      <text>
+Type: `</text>
+      <value-of select="cf:CurrentMemberReturnTypeLabel()"/>
+      <text>`  </text>
+      <text>
 </text>
       <apply-templates select="returns" />
       <text>
@@ -54,10 +56,11 @@
       <value-of select="$headlinePrefix"/>
       <text>#### Exceptions
 
+| Exception | Condition |
+|-----------|-----------|
 </text>
       <apply-templates select="exception" />
       <text>
-
 </text>
     </if>
     <if test="remarks">

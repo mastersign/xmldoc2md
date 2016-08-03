@@ -16,7 +16,7 @@
     <value-of select="normalize-space(.)"/>
     <if test="string-length(.) &gt; 1">
       <variable name="ending" select="substring(., string-length(.))"/>
-      <if test='$ending=" "'>
+      <if test="$ending=' '">
         <text> </text>
       </if>
       <if test='$ending="\n" or $ending="\r"'>
@@ -27,7 +27,7 @@
   </template>
 
   <template match="c">
-    <text>`</text>
+    <text> `</text>
     <value-of select="."/>
     <text>`</text>
   </template>
@@ -134,54 +134,72 @@
   </text>
   </template>
 
+  <template name="type-reference">
+    <param name="cref" />
+    <variable name="url" select="cf:Url(@cref)" />
+    <choose>
+      <when test="$url">
+        <text>[`</text>
+        <value-of select="cf:Label(@cref)"/>
+        <text>`](</text>
+        <value-of select="cf:Url(@cref)"/>
+        <text>)</text>
+      </when>
+      <otherwise>
+        <text> `</text>
+        <value-of select="cf:Label(@cref)"/>
+        <text>`</text>
+      </otherwise>
+    </choose>
+  </template>
+
   <template match="see">
-    <text> [`</text>
-    <value-of select="cf:Label(@cref)"/>
-    <text>`](</text>
-    <value-of select="cf:Url(@cref)"/>
-    <text>)</text>
+    <call-template name="type-reference">
+      <with-param name="cref" select="@cref" />
+    </call-template>
   </template>
 
   <template match="seealso">
-    <text>* [</text>
-    <value-of select="cf:EscapeMarkdown(cf:FullLabel(@cref))"/>
-    <text>](</text>
-    <value-of select="cf:Url(@cref)"/>
-    <text>)
+    <text>* </text>
+    <call-template name="type-reference">
+      <with-param name="cref" select="@cref" />
+    </call-template>
+    <text>
 </text>
   </template>
 
   <template match="param">
-    <text>* **</text>
     <value-of select="@name"/>
-    <text>**  </text>
+    <text>
+: Type: `</text>
+    <value-of select="cf:CurrentMemberParameterTypeLabel(@name)"/>
+    <text>`  </text>
     <text>
   </text>
     <apply-templates />
     <text>
+
 </text>
   </template>
 
   <template match="typeparam">
-    <text>* **</text>
     <value-of select="@name"/>
-    <text>**  </text>
     <text>
-  </text>
+: </text>
     <apply-templates />
     <text>
+
 </text>
   </template>
 
   <template match="exception">
-    <text>* [**</text>
-    <value-of select="cf:EscapeMarkdown(cf:Label(@cref))"/>
-    <text>**](</text>
-    <value-of select="cf:Url(@cref)"/>
-    <text>)
-  </text>
+    <text>| </text>
+    <call-template name="type-reference">
+      <with-param name="cref" select="@cref" />
+    </call-template>
+    <text> | </text>
     <apply-templates />
-    <text>
+    <text> |
 </text>
   </template>
 

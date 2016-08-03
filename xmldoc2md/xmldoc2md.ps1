@@ -51,7 +51,7 @@ Provide one of three styles for the metadata header.
 
 .DESCRIPTION
 
-xmldoc2md aims to be a light-weight converter from XML doc files (and their 
+xmldoc2md aims to be a light-weight converter from XML doc files (and their
 assemblies) to Markdown files.
 
 If you use the /doc switch with a .NET compiler, e.g. by activating the XML
@@ -67,7 +67,7 @@ as well, because a lot of information about the types and type members is not
 included in the XML doc file.
 
 To generate a documentation for a number of assemblies, you can call
-xmldoc2md, specifying the output directory for the Markdown files and the 
+xmldoc2md, specifying the output directory for the Markdown files and the
 paths to the assemblies. xmldoc2md expects to find the XML doc files beside
 their corresponding assembly.
 
@@ -135,7 +135,7 @@ xmldoc2md works with a combination of code in different languages:
 * A number of XSLT files for rendering the XML doc files as Markdown.
 
 The PowerShell script compiles the C# file at runtime by calling the Add-Type
-cmdlet. The XSLT files are used through the .NET class 
+cmdlet. The XSLT files are used through the .NET class
 System.Xml.Xsl.XsltCompiledTransformation. The types of the runtime compiled
 C# files are passed to the XsltCompiledTransformation via an XsltArgumentList
 as extension objects. This way, the XSLT files have access to the C# defined
@@ -194,8 +194,29 @@ Param (
 	[string]$MetaDataStyle = "None"
 )
 
+## Initialize Prerequisites
+
+Set-Alias new New-Object
+$myDir = [IO.Path]::GetDirectoryName($MyInvocation.MyCommand.Definition)
+
+## Compile C# code
+
+try
+{
+	Add-Type -Path "$myDir\xmldoc2md.cs" -ReferencedAssemblies "System.Xml.dll"
+}
+catch
+{
+	Write-Warning $_.Exception.Message
+	return
+}
+
+## Prepare Target Directory
+
 if (!(Test-Path $TargetPath)) { mkdir $TargetPath | Out-Null }
 $TargetPath = Resolve-Path $TargetPath
+
+## Resolve Assembly List
 
 $assemblyPaths = @()
 foreach ($p in $Assemblies)
@@ -203,6 +224,8 @@ foreach ($p in $Assemblies)
 	$assemblyPaths += Resolve-Path $p
 }
 [array]$assemblyPaths = $assemblyPaths | sort
+
+## Print Task Info
 
 Write-Host "Target Path: $TargetPath"
 Write-Host "Assemblies:"
@@ -219,18 +242,8 @@ foreach ($p in $assemblyPaths)
 	}
 }
 
-Set-Alias new New-Object
-$myDir = [IO.Path]::GetDirectoryName($MyInvocation.MyCommand.Definition)
+## Prepare .NET Objects and XSL Transformations
 
-try
-{
-	Add-Type -Path "$myDir\xmldoc2md.cs" -ReferencedAssemblies "System.Xml.dll"
-}
-catch
-{
-	Write-Warning $_.Exception.Message
-	return
-}
 $crefParsing = new Mastersign.XmlDoc.CRefParsing
 $crefFormatting = new Mastersign.XmlDoc.CRefFormatting
 $crefFormatting.FileNameExtension = $FileNameExtension
@@ -244,6 +257,8 @@ $typeStyle = new System.Xml.Xsl.XslCompiledTransform
 $typeStyle.Load([string]$typeStyleFile)
 $memberStyle = new System.Xml.Xsl.XslCompiledTransform
 $memberStyle.Load([string]$memberStyleFile)
+
+## Load Assemblies and XML DOC Files
 
 $assemblyRefs = @()
 $xmlDocs = @()
@@ -271,13 +286,67 @@ foreach ($p in $assemblyPaths)
 $crefFormatting.Assemblies = $assemblyRefs;
 $crefFormatting.XmlDocs = $xmlDocs;
 
+## Setup Headline Parameters
+
 $headlinePrefix = "#" * ($HeadlineOffset + 1)
 $printTitleHeadline = $headlinePrefix -and !$NoTitleHeadline
+
+## CRef Parsing
 
 function parse-cref($cref)
 {
     return [Mastersign.XmlDoc.CRefParsing]::Parse($cref)
 }
+
+## XML DOC Member Discovery
+
+function all-member()
+{
+	foreach ($doc in $xmlDocs)
+	{
+		$doc.SelectNodes("/doc/members/member")
+	}
+}
+
+$mIndex = @{}
+all-member `
+  | % {
+	  $cref = parse-cref $_.name
+	  $id = $cref.FullTypeName
+	  if ($mIndex[$id])
+	  {
+		  $mIndex[$id] += $_
+	  }
+	  else
+	  {
+		  $mIndex[$id] = @($_)
+	  }
+  }
+
+function type-member($typeName) { $mIndex[$typeName] | ? { $_.name -eq "T:${typeName}" } }
+function field-member($typeName) { $mIndex[$typeName] | ? { $_.name -like "F:${typeName}.*" } }
+function event-member($typeName) { $mIndex[$typeName] | ? { $_.name -like "E:${typeName}.*" } }
+function property-member($typeName) { $mIndex[$typeName] | ? { $_.name -like "P:${typeName}.*" } }
+function ctor-member($typeName)
+{
+	$ctors = $mIndex[$typeName]
+	if (!$ctors) { return }
+	$ctors | ? {
+		$_.name.StartsWith("M:${typeName}.#ctor") -or
+		$_.name.Equals("M:${typeName}.#cctor")
+	}
+}
+function method-member($typeName)
+{
+	$methods = $mIndex[$typeName]
+	if (!$methods) { return }
+	$methods | ? {
+		($_.name -match "M:${typeName}\.[^\.]+(\(.+\))?$") -and
+		!($_.name.Contains("#ctor") -or $_.name.EndsWith("#cctor"))
+	}
+}
+
+## Type Discovery
 
 function public-types()
 {
@@ -300,41 +369,35 @@ function public-types()
 	}
 }
 
-function all-member()
+[array]$types = public-types | sort { $_.FullName }
+[string[]]$namespaces = $types | % { $_.Namespace } | select -Unique | sort
+
+function type-variation([Type]$type)
 {
-	foreach ($doc in $xmlDocs)
-	{
-		$doc.SelectNodes("/doc/members/member")
-	}
+	if ($type.IsInterface) { return "Interface"	}
+	elseif ($type.IsEnum) { return "Enumeration" }
+	elseif ([MulticastDelegate].IsAssignableFrom($type)) { return "Delegate" }
+	elseif ($type.IsValueType) { return "Struct" }
+	else { return "Class" }
 }
 
-function type-member($typeName) { all-member | ? { $_.name -eq "T:${typeName}" } }
-function field-member($typeName) { all-member | ? { $_.name -like "F:${typeName}.*" } }
-function event-member($typeName) { all-member | ? { $_.name -like "E:${typeName}.*" } }
-function property-member($typeName) { all-member | ? { $_.name -like "P:${typeName}.*" } }
-function ctor-member($typeName)
+function types-of-a-kind([string]$ns, [string]$variation)
 {
-	all-member | ? {
-		$_.name.StartsWith("M:${typeName}.#ctor") -or
-		$_.name.Equals("M:${typeName}.#cctor")
-	}
+	$types | ? { ($_.Namespace -eq $ns) -and ((type-variation $_) -eq $variation) }
 }
-function method-member($typeName)
-{
-	all-member | ? {
-		($_.name -match "M:${typeName}\.[^\.]+(\(.+\))?$") -and
-		!($_.name.Contains("#ctor") -or $_.name.EndsWith("#cctor"))
-	}
-}
+
+## Markdown Generation
 
 function transform($writer, $style, [System.Xml.XmlElement]$e)
 {
 	if (!$e) { return }
+	$contextBak = $crefFormatting.CurrentContextCRef
     $sr = new System.IO.StringReader ("<partial>" + [string]$e.OuterXml + "</partial>")
     $xr = [System.Xml.XmlReader]::Create($sr)
     $xmlArgs = new System.Xml.Xsl.XsltArgumentList
 	$xmlArgs.AddParam("headlinePrefix", "", $headlinePrefix)
 	$xmlArgs.AddExtensionObject("urn:CRefParsing", $crefParsing)
+	$crefFormatting.CurrentContextCRef = $e.name
 	$xmlArgs.AddExtensionObject("urn:CRefFormatting", $crefFormatting)
     try
     {
@@ -346,6 +409,28 @@ function transform($writer, $style, [System.Xml.XmlElement]$e)
     }
     $xr.Close()
     $sr.Close()
+	$crefFormatting.CurrentContextCRef = $contextBak
+}
+
+function write-typeindexblock($writer, $types, $title)
+{
+	if ($types)
+	{
+		$writer.WriteLine("${headlinePrefix}## $title")
+		$writer.WriteLine()
+		$writer.WriteLine("| Name | Summary |")
+		$writer.WriteLine("|------|---------|")
+		foreach ($t in $types)
+		{
+            $tCRef = $crefFormatting.CRef($t)
+            $tLabel = $crefFormatting.Label($tCRef)
+            $tUrl = $crefFormatting.Url($tCRef)
+            $writer.Write("| [$($crefFormatting.EscapeMarkdown($tLabel))]($tUrl) | ")
+			$writer.Write("Description")
+			$writer.WriteLine(" |")
+		}
+		$writer.WriteLine()
+	}
 }
 
 function write-indexblock($writer, $nodes, $title)
@@ -414,19 +499,11 @@ function write-hugo-front-matter($writer, $label, $memberKind)
 	$writer.WriteLine("---")
 }
 
-function type-variation([Type]$type)
-{
-	if ($type.IsInterface) { return "Interface"	}
-	elseif ($type.IsEnum) { return "Enumeration" }
-	elseif ([MulticastDelegate].IsAssignableFrom($type)) { return "Delegate" }
-	elseif ($type.IsValueType) { return "Struct" }
-	else { return "Class" }
-}
-
-[array]$types = public-types | sort { $_.FullName }
-[string[]]$namespaces = $types | % { $_.Namespace } | select -Unique | sort
 
 Write-Host "Files:"
+
+## Write Namespace Files
+
 foreach ($ns in $namespaces)
 {
     $nsCRef = "N:$ns"
@@ -444,16 +521,11 @@ foreach ($ns in $namespaces)
     $writer.WriteLine("${headlinePrefix}# $($crefFormatting.EscapeMarkdown($nsLabel)) Namespace")
     $writer.WriteLine()
 
-    foreach ($t in $types)
-    {
-        if ($t.Namespace -eq $ns)
-        {
-            $tCRef = $crefFormatting.CRef($t)
-            $tLabel = $crefFormatting.Label($tCRef)
-            $tUrl = $crefFormatting.Url($tCRef)
-            $writer.WriteLine("* [$($crefFormatting.EscapeMarkdown($tLabel))]($tUrl)")
-        }
-    }
+	write-typeindexblock $writer (types-of-a-kind $ns "Class") "Classes"
+	write-typeindexblock $writer (types-of-a-kind $ns "Struct") "Structs"
+	write-typeindexblock $writer (types-of-a-kind $ns "Enumeration") "Enumerations"
+	write-typeindexblock $writer (types-of-a-kind $ns "Interface") "Interfaces"
+	write-typeindexblock $writer (types-of-a-kind $ns "Delegate") "Delegates"
 
 	if ($Footer)
 	{
@@ -469,11 +541,14 @@ foreach ($ns in $namespaces)
     $out.Close()
 }
 
+## Write Type Files
+
 foreach ($t in $types)
 {
 	$tFile = $crefFormatting.FileName($t)
 	$tCRefName = $crefFormatting.CRefTypeName($t)
 	$tCRef = $crefFormatting.CRef($t)
+	$crefFormatting.CurrentContextCRef = $tCRef
 	$tLabel = $crefFormatting.Label($tCref)
 	$tParseResult = parse-cref $tCRef
 	$typeVariation = type-variation $t
