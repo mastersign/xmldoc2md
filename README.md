@@ -7,7 +7,9 @@ Author: [Tobias Kiertscher](http://www.mastersign.de/)
 
 License: [MIT](https://opensource.org/licenses/MIT)
 
-[latest release]: https://github.com/mastersign/xmldoc2md/releases
+**WARNING: This project in incomplete and will not be developed any further.**
+
+_If you need to compile XML DOC to Markdown use Sand Castle Help File Builder._
 
 ## Usage
 
@@ -15,7 +17,7 @@ License: [MIT](https://opensource.org/licenses/MIT)
 xmldoc2md -TargetPath 'D:\docs\mytool' -Assemblies '.\path\to\assemblies\*.dll', 'D:\another\program.exe'
 ```
 
-The tool can be called as a PowerShell script `xmldoc2md.ps1` or via the 
+The tool can be called as a PowerShell script `xmldoc2md.ps1` or via the
 `xmldoc2md.cmd` batch file wrapper, which is executable from any Windows command prompt.
 
 ## Prerequisites
