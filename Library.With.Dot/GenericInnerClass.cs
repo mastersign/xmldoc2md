@@ -25,6 +25,20 @@ namespace Library.With.Dot
         }
 
         /// <summary>
+        /// This method has concrete type arguments mixed with
+        /// generic type arguments.
+        /// </summary>
+        /// <param name="x">A reference to a concrete generic type.</param>
+        /// <param name="y">A reference to a incompletly generic type.</param>
+        /// <returns>Some complex type.</returns>
+        public GenericOuterClass<int, GenericInnerClass<string>> Fancy(
+            GenericInnerClass<DateTime> x,
+            GenericOuterClass<double, List<TC1>> y)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
         /// An non generic inner class of a generic class.
         /// </summary>
         public class GenericInnerClass
@@ -37,7 +51,7 @@ namespace Library.With.Dot
             /// <summary>
             /// A non generic method of a non generic inner class in generic class referencing a type parameter.
             /// </summary>
-            /// <param name="t1"></param>
+            /// <param name="t1">This parameter is of type <typeparamref name="TC1"/>.</param>
             public void Method2(TC1 t1) { }
         }
 
@@ -50,8 +64,8 @@ namespace Library.With.Dot
             /// <summary>
             /// A non generic method referencing type parameters from its class and an outer class.
             /// </summary>
-            /// <param name="t1"></param>
-            /// <param name="t3"></param>
+            /// <param name="t1">This is the first parameter.</param>
+            /// <param name="t3">This is the second parameter</param>
             public void Method(TC1 t1, TC3 t3) { }
         }
     }

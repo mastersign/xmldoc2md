@@ -116,7 +116,7 @@ namespace Nested.Namespace
         public Dictionary<DateTime, SimpleType> Prop2 { get; set; }
 
         /// <summary>
-        /// This is a private Method an it <em>should not</em> be documented.
+        /// This is a private Method and it <em>should not</em> be documented.
         /// </summary>
         /// <param name="a">The left operand.</param>
         /// <param name="b">The right operand.</param>
