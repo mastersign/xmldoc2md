@@ -381,6 +381,10 @@ namespace Mastersign.XmlDoc
             set { CurrentCRef = CRefParsing.Parse(value); }
         }
 
+        private Type CurrentType { get; set; }
+
+        private MemberInfo CurrentMemberInfo { get; set; }
+
         public Assembly[] Assemblies { get; set; }
 
         private XmlDocument[] xmlDocs;
@@ -557,9 +561,12 @@ namespace Mastersign.XmlDoc
         public string Url(string cref)
         {
             var parsed = CRefParsing.Parse(cref);
-            return UrlBase + CombineFileAndAnchor(
+            var normalizedUrl = NormalizeForUrl(
+                CombineFileAndAnchor(UrlFilePartUnique(parsed), UrlAnchorPart(parsed)));
+            var url = UrlBase + CombineFileAndAnchor(
                 NormalizeForUrl(UrlFilePartUnique(parsed)) + UrlFileNameExtension,
                 NormalizeForUrl(UrlAnchorPartUnique(parsed)));
+            return fullUrlCounts.ContainsKey(normalizedUrl) ? url : string.Empty;
         }
 
         public string CRefTypeName(Type t)
@@ -872,6 +879,26 @@ namespace Mastersign.XmlDoc
                 else lines[i] = lines[i].Substring(minIndentation);
             }
             return string.Join(Environment.NewLine, lines).TrimEnd();
+        }
+
+        public string CurrentMemberReturnTypeLabel()
+        {
+            var method = CurrentMemberInfo as MethodInfo;
+            if (method == null) return "???";
+            return Label(CRef(method.ReturnType));
+        }
+
+        public string CurrentMemberParameterTypeLabel(string paramName)
+        {
+            var method = CurrentMemberInfo as MethodInfo;
+            if (method == null) return "???";
+            var parameters = method.GetParameters();
+
+            foreach (var p in parameters)
+            {
+                if (p.Name == paramName) return Label(CRef(p.ParameterType));
+            }
+            return "?" + paramName + "?";
         }
     }
 }
