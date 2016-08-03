@@ -36,8 +36,8 @@ namespace Mastersign.XmlDoc
             f.UrlBase = "BASE/";
             f.UrlFileNameExtension = ".ext";
 
-            Assert.AreEqual("BASE/ns_Abc.Def.ext", f.Url("N:Abc.Def"));
-            Assert.AreEqual("BASE/Ab.Cd.ext#Method1", f.Url("M:Ab.Cd`1.Method1(`0)"));
+            Assert.AreEqual("BASE/ns-abc-def.ext", f.Url("N:Abc.Def"));
+            Assert.AreEqual("BASE/ab-cd.ext#method1", f.Url("M:Ab.Cd`1.Method1(`0)"));
         }
     }
 }
